@@ -10,9 +10,9 @@
 
 Hi! I'm Thomas, a french software engineer.
 
-I did a lot of Python, and broke a few databases. I helped me to understand why did they broke... at least, most of the time.
+I did a lot of Python, and broke a few databases. I helped me to understand why did they break... at least, most of the time.
 
-I like to solve problems involving computers.
+I like to solve problems involving computers. 
 
 
 -----------
@@ -24,7 +24,7 @@ I like to solve problems involving computers.
 #+ATTR_HTML: :style float:right
 file:images/tradelab.png
 
-- I was hired as a Devops / Database expert
+- I was hired as a DevOps/ Database expert
 
 -----------
 
@@ -39,13 +39,13 @@ file:images/tradelab.png
 - SQL (SQL-Server)
 
 This experience was very interesting on various subjects. 
-At Numberly, I've disovered how it feels to work with various (also non technical) profiles, and surprisingly, I've enjoyed it a lot.
+At Numberly, I've discovered how it feels to work with various (also non technical) profiles, and surprisingly, I've enjoyed it a lot.
 
 ---
 
 Initially hired as a Python Developer, I've worked on several topics. 
 So far, my favourite one was about optimizing legacy Python code heavily used in production. 
-After a few but anxiety-prone race-condition bugs, we managed to divide the load of a whole cluster by 3, and were pretty happy about it - the pach contained less than 200 lines of code.
+After a few but anxiety-prone race-condition bugs, we managed to divide the load of a whole cluster by 3, and we were pretty happy about it - the patch contained less than 200 lines of code.
 
 Then, I've increased my perimeter and also had opportunities to help with production system's reliability and information/infrastructure security.
 
@@ -63,7 +63,7 @@ Then, I've increased my perimeter and also had opportunities to help with produc
 - Everything was running on Linux
 
 
-At OVH, I've learnt what's a "pretty big" infrastructure and what it involves to keep it up and running.
+At OVH, I've learned what's a "pretty big" infrastructure and what it involves to keep it up and running.
 Also, handling a lot of services, including legacy ones, at scale is hard - handling software lifecycle is clearly a big challenge.
 
 -----------
@@ -74,7 +74,7 @@ Also, handling a lot of services, including legacy ones, at scale is hard - hand
 
 
 I enjoy programming a lot. 
-I have professional experiences with Python (2.7+) and still prefer Python for various personnal projects.
+I have professional experiences with Python (2.7+) and still prefer Python for various personal projects.
 The same applies for shell scripting on Linux, but I'm not enjoying that as much as Python :)
 
 I also use `Ansible`, have a daily use of `Git` and Linux. 
@@ -82,6 +82,7 @@ I find my accidental and limited knowledge of Linux very useful in a professiona
 
 On a more personal touch, I use `emacs` and had plenty of jokes about it.
 I enjoy programming in `Rust` in my spare time, and stupid and/or useless projects. See my github for /non pertinent stuff/.
+
 
 I also like bonsaïs, internet culture, video-games and hacking.
 
