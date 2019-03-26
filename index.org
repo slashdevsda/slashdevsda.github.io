@@ -85,8 +85,13 @@ The same applies for shell scripting on Linux, but I'm not enjoying that as much
 I also use `Ansible`, have a daily use of `Git` and Linux. 
 I find my accidental and limited knowledge of Linux very useful in a professional context involving Linux boxes.
 
-On a more personal touch, I use `emacs` and had plenty of jokes about it.
-I enjoy programming in `Rust` in my spare time, and stupid and/or useless projects. See my github for /non pertinent stuff/.
+On a more personal touch, I enjoy programming in `Rust` in my spare time, and stupid and/or useless projects. See my github for /non pertinent stuff/.
+
+I'm widely interested by distributed systems, applications and workloads - this leads me to study and learn /Elixir/ (and a little bit of /Erlang/ too) with /OTP/
+on my spare time - I found these concepts and mechanics very "innovatives" in the distributed programming field, despite the fact that Erlang is way older than me.
+
+I use `emacs` and had plenty of jokes about it, just ask.
+
 
 
 I also like bonsaïs, internet culture, video-games and hacking.
