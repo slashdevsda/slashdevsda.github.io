@@ -11,9 +11,11 @@
 
 Hi! I'm Thomas, a french software engineer.
 
-I did a lot of Python, and broke a few databases. I helped me to understand why did they break... at least, most of the time.
 
-I like to solve problems involving computers. 
+I did a lot of Python, and broke a few databases. It helped me to understand why did they break... at least, most of the time.
+
+I like to solve problems involving computers.
+
 
 
 -----------
@@ -25,7 +27,10 @@ I like to solve problems involving computers.
 #+ATTR_HTML: :style float:right
 file:images/tradelab.png
 
-- I was hired as a DevOps/ Database expert
+- Hired as a DevOps
+- Infrastructure & services, 
+- Working on PaaS features, architecture and Linux related issues
+- Security related missions
 
 -----------
 
@@ -34,10 +39,10 @@ file:images/tradelab.png
 #+ATTR_HTML: :style float:right
 [[file:images/1000mercis.jpg]]
 
-- I was hired as a Python developer
-- Joined a small team (2-5) 
+- Python developer
+- Joined a small team (2-5)
 - Python and security best practices
-- SQL (SQL-Server)
+- SQL (SQL-Server), mongoDB
 
 This experience was very interesting on various subjects. 
 At Numberly, I've discovered how it feels to work with various (also non technical) profiles, and surprisingly, I've enjoyed it a lot.
@@ -96,3 +101,4 @@ I also like bonsaïs, internet culture, video-games and hacking.
 
 
 [[https://github.com/fniessen/org-html-themes][org-mode themes]]
+
