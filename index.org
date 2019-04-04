@@ -1,5 +1,5 @@
 #+SETUPFILE: https://fniessen.github.io/org-html-themes/setup/theme-readtheorg.setup
-#+TITLE: Thomas, Software Engineer
+#+TITLE: Thomas Ecuer, Software Engineer
 #+OPTIONS: H:2
 
 
@@ -8,13 +8,9 @@
 
 ------
 
-Hi! I'm Thomas, a french software engineer.
+Hi! I'm Thomas, a french software engineer. I currently live in Paris.
 
-
-I did a lot of Python, and broke a few databases. It helped me to understand why did they break... at least, most of the time.
-
-I like to solve problems involving computers.
-
+I like to solve problems involving computers and software, especially those running under Linux.
 
 
 -----------
@@ -26,10 +22,12 @@ I like to solve problems involving computers.
 #+ATTR_HTML: :style float:right
 file:images/tradelab.png
 
-- Hired as a DevOps
-- Infrastructure & services, 
-- Working on PaaS features, architecture and Linux related issues
-- Security related missions
+/Tradelab/ is a programmatic marketing platform, mainly operating in the Real Time Biding field.
+
+- Hired as a DevOps @Infrastructure & services
+- Working on PaaS features, software architecture and Linux related issues
+- Docker, Jenkins
+- Infrastructure/security missions
 
 -----------
 
@@ -43,14 +41,18 @@ file:images/tradelab.png
 - Python and security best practices
 - SQL (SQL-Server), mongoDB
 
-This experience was very interesting on various subjects. 
-At Numberly, I've discovered how it feels to work with various (also non technical) profiles, and surprisingly, I've enjoyed it a lot.
+/Numberly/ (1000Mercis group) is a marketing agency focused on data collection, /Customer Relationship Management/, /Real Time Biding/ and some others ways to increase digital impact.
+
+This experience was very interesting on various aspects. 
+At Numberly, I've discovered how it feels to work with various (/non tech/) profiles, and surprisingly, I've enjoyed it a lot.
 
 ---
 
-Initially hired as a Python Developer, I've worked on several topics. 
+Initially hired as a Python Developer, I've mostly worked on a Python HTTP API designed to gather personal data, used in many contexts (Websites, online mini-games, applications...)
+
+I've worked on several topics within this perimeter.
 So far, my favourite one was about optimizing legacy Python code heavily used in production. 
-After a few but anxiety-prone race-condition bugs, we managed to divide the load of a whole cluster by 3, and we were pretty happy about it - the patch contained less than 200 lines of code.
+After a few but anxiety-prone bugs, we managed to divide the load of a whole cluster by 3, and we were pretty happy about it.
 
 Then, I've increased my perimeter and also had opportunities to help with production system's reliability and information/infrastructure security.
 
@@ -62,14 +64,18 @@ Then, I've increased my perimeter and also had opportunities to help with produc
 #+ATTR_HTML: :style float:right
 [[file:images/ovh.png]]
 
+/OVH is a French hosting company/
+
 - It was my last internship
-- I was mostly in Perl/Python
+- Perl/Python oriented
 - I also used AngularJS
-- Everything was running on Linux
+- Linux environments
 
 
-At OVH, I've learned what's a "pretty big" infrastructure and what it involves to keep it up and running.
-Also, handling a lot of services, including legacy ones, at scale is hard - handling software lifecycle is clearly a big challenge.
+At OVH, I've learned what a "pretty big" infrastructure is, and what it involves to keep it up and running.
+Also, handling a lot of services, including legacy ones, at scale is hard - software lifecycle is a real challenge, as well as development itself.
+
+The people there were the most brilliant I've ever met so far, and I've never learned as much in a short window of time.
 
 -----------
 
@@ -80,17 +86,18 @@ Also, handling a lot of services, including legacy ones, at scale is hard - hand
 
 I enjoy programming a lot. 
 I have professional experiences with Python (2.7+) and still prefer Python for various personal projects.
-The same applies for shell scripting on Linux, but I'm not enjoying that as much as Python :)
+The same applies to shell scripting on Linux, but I'm not enjoying that as much as Python :)
 
-I also use `Ansible`, have a daily use of `Git` and Linux. 
-I find my accidental and limited knowledge of Linux very useful in a professional context involving Linux boxes.
 
-On a more personal touch, I enjoy programming in `Rust` in my spare time, and stupid and/or useless projects. See my github for /non pertinent stuff/.
+I also use /Ansible/, have a daily use of /Git/ and Linux.
+I find my accidental and limited knowledge of Linux very useful in a professional context involving Linux boxes. 
 
-I'm widely interested by distributed systems, applications and workloads - this leads me to study and learn /Elixir/ (and a little bit of /Erlang/ too) with /OTP/
-on my spare time - I found these concepts and mechanics very "innovatives" in the distributed programming field, despite the fact that Erlang is way older than me.
+On a more personal touch, I enjoy programming in `Rust` in my spare time, and stupid and/or useless projects. See my github for [[https://github.com/slashdevsda/fb/blob/master/main.asm#L104][/non pertinent stuff/]] :')
 
-I use `emacs` and had plenty of jokes about it, just ask.
+I'm interested by distributed systems, applications and workloads - like discovering and understanding how a database fits into the CAP theorem, for instance.
+
+This leads me to learn /Elixir/ (and a little bit of /Erlang/ too) with /OTP/ on my spare time - I found these concepts and mechanics very interesting, as well as the functional paradigm.
+
 
 
 
@@ -102,7 +109,4 @@ I also like bonsaïs, internet culture, video-games and hacking.
 
 
 
-
-
 [[https://github.com/fniessen/org-html-themes][org-mode themes]]
-
