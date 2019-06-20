@@ -22,14 +22,18 @@ I like to solve problems involving computers and software, especially those runn
 #+ATTR_HTML: :style float:right
 file:images/tradelab.png
 
-/Tradelab/ is a programmatic marketing platform, mainly operating in the Real Time Biding field.
+/Tradelab/ is a programmatic marketing platform, mainly operating in the [[https://en.wikipedia.org/wiki/Real-time_bidding][Real Time Biding]] field.
 
-- Hired as a DevOps @Infrastructure & services
-- Working on PaaS features, software architecture and Linux related issues
-- Docker, Jenkins
-- Infrastructure/security missions
+- Hired as a DevOps @Infrastructure & Cloud Services
+- Working on /PaaS/ features, software architecture and Linux related issues
+- /Docker/, /Jenkins/, /Google Cloud Platform/
+- Infrastructure/security oriented missions, in conjuction with various contractors (system administration and network administration)
+
 
 -----------
+
+
+
 
 *** 1000Mercis/Numberly Group (Jan 2016 - Oct 2018)
 
@@ -104,9 +108,10 @@ This leads me to learn /Elixir/ (and a little bit of /Erlang/ too) with /OTP/ on
 I also like bonsaïs, internet culture, video-games and hacking.
 
 
+---
 
 
+- [[http://blog.devsda.fr/][Blog (mostly technical)]]
+- [[https://github.com/slashdevsda][Github]]
 
 
-
-[[https://github.com/fniessen/org-html-themes][org-mode themes]]
