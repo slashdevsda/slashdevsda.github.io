@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <title>[fr] Dwarf Fortress</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="./theme/css/main.css" />
+        <link href="http://blog.devsda.fr/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Full Atom Feed" />
+        <link href="http://blog.devsda.fr/feeds/{slug}.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Categories Atom Feed" />
+</head>
+<body>
+
+    <div class="navigation pure-menu pure-menu-horizontal">
+        <a href="./" class="pure-menu-heading  pure-menu-link">devsda - blog</a>
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"></li>
+
+            <li class="pure-menu-item pure-menu-selected"><a href="./category/less-tech.html" class="pure-menu-link">Less tech</a></li>
+            <li class="pure-menu-item"><a href="./category/tech.html" class="pure-menu-link">tech</a></li>
+        </ul>
+    </div>
+
+
+<div class="page-container">
+    <div class="entry-content">
+        <div class="post-meta pure-g">
+            <div class="pure-u">
+                <a href="./category/less-tech.html"><img src="../images/tech.jpg " class="post-avatar" alt="less tech"></a>
+            </div>
+<div class="pure-u-3-4 meta-data">
+    <a href="./category/less-tech.html" class="category">less tech</a><br />
+
+    <a class="author" href="./author/thomas.html">Thomas</a>
+    &mdash; <abbr title="2017-06-08T00:05:00+02:00">jeu. 08 juin 2017</abbr>
+</div>        </div>
+    </div>
+
+    <div class="article-header-container">
+        <div class="background-image-container">
+
+            <div class="background-image" style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(../images/df/df.jpg);">
+                <img src="../images/df/df.jpg" alt="[fr] Dwarf Fortress">
+                <div class="title">
+                <h1>
+                    [fr] Dwarf Fortress
+                </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry-content">
+        <h1>Dwarf Fortress</h1>
+<p><img alt="" src="images/df/xkcd.png">
+(<a href="https://xkcd.com/1223/"><em>xkcd</em></a>)</p>
+<p>J'ai toujours aimé les jeux de gestion. J'étais bien intrigué le jour ou j'ai découvert <em>Dwarf Fortress</em>, a priori source d'inspiration de Markus Persson lors de l'élaboration du célèbre <em>Minecraft</em>.</p>
+<p>Avec le recul, ces deux jeux ont en commun la génération procédurale de la surface jouable, et surtout, l'absence d'objectif particulier.</p>
+<p>Pour en revenir à notre sujet principal, <em>Dwarf Fortress</em> vous plonge dans une civilisation naine dont vous contrôlez la destinée.
+Même si je parlais d'absence d'objectif, il faut quand même satisfaire/maintenir en vie vos nains. Et pourquoi ne pas réaliser vos rêves ?
+Une forteresse hors du sol ? Industrialiser la mise à mort de vos assaillants ? Organiser des combats épiques entre des monstres légendaires et des gobelins dans une arène ?
+Faire fortune dans la vente et l'élevage d'esclaves ? Ça ne tient qu'à vous !</p>
+<p>Une bonne partie du contenu est générée aléatoirement - Dwarf Fortress demeure une référence dans le genre procédural. Cela va du terrain aux attributs des
+différentes créatures que vous aurez la chance de rencontrer.</p>
+<hr>
+<p>Ainsi, vos nains se spécialisent petit à petit avec l'augmentation générale de la population, et la diversification des tâches à effectuer
+pour aller plus loin dans les possibilités offertes par le jeu. Assurez-vous, au niveau <em>possibilités offertes par le jeu</em>, (quasiment) n'importe quel autre jeu
+se retrouve relégué au rang de <em>Candy Crush</em>.</p>
+<p>Sans pour autant être un jeu "textuel", <em>Dwarf Fortress</em> s'appuie en partie sur l'imagination du joueur dans pas mal de situations - profitant de la génération procédurale poussée à l'extrême, cela permet un très haut niveau de détail. Cela est particulièrement vrai avec les créatures de toutes sortes. On notera des détails ahurissants dans les descriptions, et qui peuvent (et vont !) impacter le gameplay.</p>
+<p>Afin de rendre l'expérience plus simple visuellement, j'ai pris l'habitude de jouer avec le <em>tileset IronHand</em>, afin de bénéficier de petites images à la place des caractères.</p>
+<h2>Gameplay</h2>
+<p><em>Je fais référence au mode de jeu "Dwarf Fortress" pour tout le reste de l'article</em></p>
+<p>On distingue deux types d'actions qui vous permettent d'agir sur votre forteresse et en influencer l'évolution:</p>
+<ul>
+<li>Les désignations</li>
+<li>Les tâches</li>
+</ul>
+<p>Les <em>désignations</em> (<code>d</code>) permettent de marquer une <em>case</em> pour y effectuer une action. Par exemple, on peut délimiter
+une zone à miner via le menu <em>designations</em> (<code>d-d</code>). Le curseur change alors d'apparence, et on peut marquer deux coins
+d'un rectangle en validant avec la touche <em>entrée</em> (<code>⌤</code>).</p>
+<p>Concrètement, vous pouvez désigner des lieux et donner des ordres pour faire accomplir des tâches plus ou moins complexes à vos nains
+(de "creuser un trou" à la mise en place de mécanismes impliquant des <em>barrages hydrauliques</em> et des <em>plaques de pression</em>)</p>
+<p>Les <em>tâches</em> sont plus générales, et peuvent être commandées dans des bâtiments dédiés ou bien ordonnées de façon automatique.</p>
+<p>Par exemple, récolter des parcelles de culture arrivées à maturation sera ordonné automatiquement et effectué par un nain possédant la compétence adéquate. De la
+même façon, si les conditions sont réunies (canne, compétence, cours d'eau) un pêcheur ira pêcher sans qu'on lui ordonne.</p>
+<h1>Partie type</h1>
+<p>On commence par générer le "monde". Des longues minutes durant lesquelles un monde est généré, avec une histoire propre à ce dernier.</p>
+<p>Il se peut par exemple que les elfes soient neutres (ils cherchent habituellement le conflit), voire éteins (!!!).
+Ces paramètres influent la diplomatie dans le monde nouvellement créée.</p>
+<p>Après vient le moment de choisir un endroit sur la carte (de préférence un minimum accueillant), un peu d'équipement, et c'est parti.
+En général, on met le jeu en pause (<em>espace</em>) pour avoir le temps d'inspecter les environs et d'ordonner de commencer à creuser.</p>
+<p>Les premières parties peuvent être frustrantes, le jeu paraît compliqué au premiers abords. Puis vient une phase où vous commencez à prospérer,
+et expérimenter des nouvelles choses (l'eau coule, la noyade tue, par exemple, s'apprennent souvent au péril d'une forteresse). C'est un peu comme
+un apprentissage permanent.</p>
+<p>Ça fait bien plusieurs années que j'y joue, et j'y découvre sans cesse de nouvelles choses (comme utiliser un vampire enchainé comme chien de garde/leurre).</p>
+<h2>Interactions</h2>
+<p>Énormément de facteurs sont constamment pris en compte. Les combats (comme le reste) sont aussi d'un niveau de détails très élevé.</p>
+<p><img alt="" src="images/df/df_vam_locked.jpg"></p>
+<p><em>On ne dirait pas comme ça, mais le nain violet ci-dessus est un vampire, ancien maire, bloqué dans sa luxueuse chambre depuis plusieurs années.</em></p>
+<p>Les nains :</p>
+<ul>
+<li>ont une histoire</li>
+<li>des liens de parenté avec d'autres nains</li>
+<li>des liens d'amitié/haine avec d'autres nains</li>
+<li>doivent manger et boire (de la bière de préférence !)</li>
+<li>sont sensibles sur le plan <a href="http://dwarffortresswiki.org/index.php/DF2014:Emotion">émotionnel</a> (~120 émotions différentes)</li>
+<li>ont une <a href="http://dwarffortresswiki.org/index.php/DF2014:Personality_trait">personnalité</a></li>
+<li>peuvent posséder des objets</li>
+<li>peuvent posséder des pièces/chambres</li>
+<li>possèdent des <a href="http://dwarffortresswiki.org/index.php/DF2014:Attribute">attributs physiques</a> (comme toute créature de <em>Dwarf Fortress</em>)</li>
+<li>des <a href="http://dwarffortresswiki.org/index.php/DF2014:Attribute#Soul_Attributes">compétences intellectuelles</a></li>
+<li>apprennent et évoluent dans leur(s) domaine(s)</li>
+<li>...</li>
+</ul>
+<p>J'ai tenté de décrire les nains, mais c'est à peu près aussi complet pour tout et n'importe quoi.</p>
+<p>Le wiki parle de lui-même. <a href="http://dwarffortresswiki.org/index.php/23a:Antman">Regardez la page des "antman" (hommes fourmis)</a> sur le <em>dwarffortresswiki</em></p>
+<blockquote>
+<p>Despite their name, all antmen are female</p>
+</blockquote>
+<p>Oubliez tout ce que vous connaissez dans le jeu vidéo. On peut parler de <em>Dwarf Fortress</em> like, mais honnêtement, je ne vois
+aucun jeu s'en rapprochant, et surtout, qui gère des interactions avec autant de détails. Quand on mélange tout ça, avec une centaine de nains, le moindre évènement inattendu peut initier une série de WTF.</p>
+<h2>Un petit-peu de WTF</h2>
+<hr>
+<p><img alt="" src="images/df/df3_angryfisher.jpg"></p>
+<p><em>Ça, c'est l'histoire d'un pêcheur que j'ai enrôlé (de force) et que j'ai entrainé pendant des années.</em>
+<em>Le jour ou je le fais sortir de sa salle d'entrainement (qu'il n'a pas quitté depuis), il se saisi de sa canne et va pêcher. La suite, c'est
+un ...lézard-garou (werelizard) qui l'attaque. Résultat: il le défonce.</em></p>
+<p><em>En règle générale, dans DF, il vaut mieux craindre les *-garous, (were-animals&gt;), ils ont tendance à contaminer votre population,
+et ça mène assez vite à <a href="http://dwarffortresswiki.org/index.php/v0.34:Losing">un peu plus de fun</a>. Celui-ci n'a pas fait long feu.</em></p>
+<p>On se souviendra de ses paroles après ce massacre :</p>
+<blockquote>
+<p>Death is all around us. I am not upset by this</p>
+</blockquote>
+<hr>
+<p><img alt="" src="images/df/dfsiege.png"></p>
+<p><em>L'entrée de la forteresse après un assaut de gobelins assez soutenu. On remarquera le sang, les cadavres ('g') et les nombreux items au sol,
+au niveau du rempart Est. Nos soldats se trouvent en haut (et viennent de dérouiller sévère)</em></p>
+<p><em>Les cages visibles sont des pièges ayant fonctionnés et qui contiennent des gobelins vivants, avec lesquels on organise des
+  petites "fêtes" dans une arène dédiée (et j'entraine mes soldats avec ces cibles vivantes, c'est plus divertissant &amp; prolifique)</em></p>
+<hr>
+<p><img alt="" src="images/df/dffight.png"></p>
+<p><em>Un log de combat assez violent entre un nain (lancier - spreadwarf) et un gobelin durant le siège visible ci-dessus</em></p>
+<hr>
+<p><img alt="" src="images/df/df_inside.png"></p>
+<p><em>L'intérieur de la fortresse - des salles communes, et quelques ateliers en bas à droite. La salle la plus à gauche est l'infirmerie.</em></p>
+<hr>
+<p>Bref, n'hésitez pas à vous plonger dans ce vaste univers. Perso, j'utilise <a href="http://dwarffortresswiki.org/index.php/Utility:Lazy_Newb_Pack">lnp</a>
+pour avoir un large choix de <em>tilesets</em>.</p>
+<p>Vous trouverez le site de <a href="http://www.bay12games.com/dwarves/">Bay12Games, l'éditeur de dwarf fortress ici</a>.</p>
+    </div>
+
+    <footer>
+        <div class="tags">
+            <a href="./tag/dwarf-fortress.html">dwarf-fortress</a>
+            <a href="./tag/games.html">games</a>
+        </div>
+        <div class="pure-g post-footer">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <div class="pure-g poster-info">
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./author/thomas.html">Thomas</a></h3>
+                        <p class="author-description">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="pure-u-1 pure-u-md-1-2">
+
+                <div class="pure-g post-category-info">
+                    <div class="pure-u">
+                        <a href="./category/less-tech.html"><img src="../images/tech.jpg" alt=""></a>
+                    </div>
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./category/less-tech.html">less tech</a></h3>
+                        <p class="author-description">
+                          Everything else
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </footer>
+
+    <div class="entry-content">
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'devsda';
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+
+</div>
+
+
+
+    <footer class="index-footer">
+
+        <a href="./" title="devsda - blog">devsda - blog</a>
+        <a href="./category/less-tech.html">Less tech</a>
+        <a href="./category/tech.html">tech</a>
+        <a href="http://getpelican.com/">Pelican</a>
+        <a href="http://python.org/">Python.org</a>
+        <a href="https://www.laquadrature.net/fr">La Quadrature du Net</a>
+
+    </footer>
+
+</body>
+</html>

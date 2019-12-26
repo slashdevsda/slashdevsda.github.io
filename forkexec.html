@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <title>Fork+Exec</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="./theme/css/main.css" />
+        <link href="http://blog.devsda.fr/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Full Atom Feed" />
+        <link href="http://blog.devsda.fr/feeds/{slug}.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Categories Atom Feed" />
+</head>
+<body>
+
+    <div class="navigation pure-menu pure-menu-horizontal">
+        <a href="./" class="pure-menu-heading  pure-menu-link">devsda - blog</a>
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"></li>
+
+            <li class="pure-menu-item"><a href="./category/less-tech.html" class="pure-menu-link">Less tech</a></li>
+            <li class="pure-menu-item pure-menu-selected"><a href="./category/tech.html" class="pure-menu-link">tech</a></li>
+        </ul>
+    </div>
+
+
+<div class="page-container">
+    <div class="entry-content">
+        <div class="post-meta pure-g">
+<div class="pure-u-3-4 meta-data">
+    <a href="./category/tech.html" class="category">Tech</a><br />
+
+    <a class="author" href="./author/devsda.html">devsda</a>
+    &mdash; <abbr title="2019-01-08T13:20:00+01:00">mar. 08 janvier 2019</abbr>
+</div>        </div>
+    </div>
+
+    <div class="article-header-container">
+        <div class="background-image-container">
+
+            <div class="background-image" style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(../images/man_fork.png);">
+                <img src="../images/man_fork.png" alt="Fork+Exec">
+                <div class="title">
+                <h1>
+                    Fork+Exec
+                </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry-content">
+        <h1>Hot Reloading</h1>
+<p>Any HTTP Server have to <em>setup</em> and <em>bind</em> a socket to any available port. This is basically how 
+any kind of server work. Even in IPv6. Even within a blockchain😂! </p>
+<p>At some point, you'll have to restart them. Depending on the task 
+(code deployment, configuration deployment, server update), the process (at OS level) may need to stop 
+and start again. During this process, the main listening socket (usually bound on port 80 or 443 in the simplest configuration) could eventually 
+"disconnect" and let your clients hitting a dry wall, leading to service discontinuation - and often, we (IT people) don't like that very much. </p>
+<p>At my previous job, I wondered how <a href="https://uwsgi-docs.readthedocs.io/en/latest/">uWSGI</a> <em>(which is itself a kind of HTTP Server with tons of features)</em> performs 
+its "hot-reload", without "un-binding" it's main socket. Yep. It does that. Without crashing clients. At all!</p>
+<p>Let's be clear - we don't talk about automatic recompilation when the code changes - but delivering consistent HTTP responses for a thousand of motherfuckers per seconds while 
+upgrading business critical software!</p>
+<h2>Other approach</h2>
+<p>In modern configurations, we often relies on load-balancers during <em>rolling updates</em>, because a few nodes may eventually be unavailable during the reload operation. </p>
+<p>In an other hand, essentially in functionnal languages (but can be also done in Java), you can "update" the runtime while it's running. This is the case with <em>Clojure</em> and <em>Erlang</em>, both respectively 
+relying on the <em>JVM</em> and <em>BEAM</em>. 
+Because of the emphasis on purity (lack of side effects, globals, vars, etc), one can update a function's code without worrying breaking everything down. </p>
+<hr>
+<p>But still - that's a lot of constrains.
+What about a "real" OS Process level hot reloading?</p>
+<h2>At process (Linux) level</h2>
+<p><em>Returning to the uWSGI example from above</em> </p>
+<p>When you deploy a new configuration or new code, you basically ask uWSGI to reload and, "magic happens".
+You'll see uWSGI lying around with a brand new <em>PID</em>, but the listening socket is still there - still listening without interruption.</p>
+<p>No high-level trick nor load-balancing are needed - Linux can fucking handle this if your code is smart enough :)
+You can even restore client's states - which is awesome for long polling connection.</p>
+<h2>Lazy version</h2>
+<p>Using <code>SO_REUSEADDR</code> and <code>SO_REUSEPORT</code>, one can bind more than one socket (from one or more processes) on a given couple <code>(IP, PORT)</code>.
+We can achieve a somewhat "grateful reloading" with these:</p>
+<div class="highlight"><pre><span></span><span class="n">main_socket</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">main_socket</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEPORT</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+
+<p>and start a <em>parallel</em>, <em>updated</em> process, while asking the <em>oldest and deprecated</em> to stop accepting new clients.
+But still ... this implies a new socket somewhere. Also, it implies a recent Linux Kernel.</p>
+<h1>Fork+exec</h1>
+<h2>Explanation:</h2>
+<p>These are a few prerequisites:</p>
+<ul>
+<li>Sockets should be configured without the flag <code>SOCK_CLOEXEC</code>. Else, all opened filedescriptors will automatically close at <code>exec</code> call.</li>
+<li>main socket's <em>bind</em> operation should only be done once - after the initial creation. While reloading, this socket is never recreated - but instead duplicated from a <em>fileno</em> passed as argument to the program itself.</li>
+<li><code>fcntl(server_socket, fcntl.F_SETFD, socket.SOCK_CLOEXEC)</code> looks always mandatory, even after a reload. I can't explain this right know.</li>
+</ul>
+<p><img alt="diag" src="./images/fork_exec_diag.png"></p>
+<h2>Commented code (python3):</h2>
+<p>This example leverage the fork+exec mechanism using Python and its standard library.
+It stays easy to read (and easier/faster to write than C equivalent)</p>
+<p>I kept it very simple - this server can't handle concurrent clients, and that's okay. </p>
+<div class="highlight"><pre><span></span><span class="ch">#!/bin/env python3</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">fcntl</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">signal</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+
+<span class="c1"># fork + exec python server example</span>
+
+<span class="n">server_socket</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">client_sockets</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<span class="k">def</span> <span class="nf">client_processing</span><span class="p">(</span><span class="n">sock</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Hello World™ for the socket programming world</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">ct</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4096</span><span class="p">)</span>
+        <span class="k">if</span> <span class="sa">b</span><span class="s1">&#39;hello&#39;</span> <span class="ow">in</span> <span class="n">ct</span><span class="p">:</span>
+            <span class="n">sock</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;... world!&quot;</span><span class="p">)</span>
+            <span class="k">break</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+
+<span class="k">def</span> <span class="nf">reload_now</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    asynchronously called by a signal</span>
+<span class="sd">    (here, SIGUSR1)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">pid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fork</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">pid</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="c1"># child</span>
+        <span class="n">client_filenos</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">.</span><span class="n">fileno</span><span class="p">())</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">client_sockets</span><span class="p">]</span>        
+        <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;child: main.py {server_socket.fileno()} {&#39; &#39;.join(client_filenos)}&quot;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">execvp</span><span class="p">(</span><span class="vm">__file__</span><span class="p">,</span> <span class="p">[</span><span class="vm">__file__</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">server_socket</span><span class="o">.</span><span class="n">fileno</span><span class="p">()),</span> <span class="o">*</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">client_filenos</span><span class="p">]])</span>
+    <span class="k">elif</span> <span class="n">pid</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># parent&#39;s exit</span>
+        <span class="c1"># achieve a daemon</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;parent is exiting&#39;</span><span class="p">)</span>
+        <span class="nb">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;os.fork failed :(&#39;</span><span class="p">)</span>
+        <span class="nb">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+
+<span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="n">server_fileno</span><span class="p">,</span> <span class="n">clients_fileno</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Server entry point.</span>
+<span class="sd">    This function can be called in two different ways:</span>
+
+<span class="sd">    (None, []) -&gt; setup a classic listening socket</span>
+<span class="sd">    (filedescriptor: str, clients_fileno: List[str]) -&gt; &quot;re&quot; bind the listening socket</span>
+<span class="sd">    then continue to serve previously accepted clients</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">...START</span><span class="se">\n</span><span class="s1">  {server_fileno}, {clients_fileno} &#39;</span> <span class="p">)</span>
+    <span class="k">global</span> <span class="n">server_socket</span>
+    <span class="k">global</span> <span class="n">client_sockets</span>
+    <span class="n">signal</span><span class="o">.</span><span class="n">signal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGUSR1</span><span class="p">,</span> <span class="n">reload_now</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">server_fileno</span><span class="p">:</span>
+        <span class="c1"># open &quot;inherited&quot; socket</span>
+        <span class="n">server_socket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">fromfd</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">server_fileno</span><span class="p">),</span> <span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+        <span class="c1"># We have to call fcnt again, dunno really why.</span>
+        <span class="c1"># If not, we can only reload once, which is stupid</span>
+        <span class="n">fcntl</span><span class="o">.</span><span class="n">fcntl</span><span class="p">(</span><span class="n">server_socket</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">F_SETFD</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_CLOEXEC</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># create socket</span>
+        <span class="n">server_socket</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+        <span class="n">fcntl</span><span class="o">.</span><span class="n">fcntl</span><span class="p">(</span><span class="n">server_socket</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">F_SETFD</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_CLOEXEC</span><span class="p">)</span>
+        <span class="c1"># set main socket options</span>
+        <span class="n">server_socket</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">server_socket</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEPORT</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">server_socket</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span> <span class="mi">8000</span><span class="p">))</span>
+
+    <span class="n">server_socket</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="c1"># if we came from a reload,</span>
+    <span class="c1"># serve previous before accessing main loop below</span>
+    <span class="c1"># (in real life, these will be delayed to asynchronous tasks or dedicated threads, instead of</span>
+    <span class="c1"># blocking right here - but you get the idea)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">clients_fileno</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s1">&#39;resuming clients...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">fd</span> <span class="ow">in</span> <span class="n">clients_fileno</span><span class="p">:</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">fromfd</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">fd</span><span class="p">),</span> <span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+            <span class="n">client_sockets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="n">client_processing</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="n">client_sockets</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+
+    <span class="c1"># &quot;Accept&quot; loop</span>
+    <span class="c1"># This is our main loop</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">client_socket</span><span class="p">,</span> <span class="p">(</span><span class="n">client_addr</span><span class="p">,</span> <span class="n">client_port</span><span class="p">))</span> <span class="o">=</span> <span class="n">server_socket</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+
+        <span class="c1"># This step is important</span>
+        <span class="c1"># We don&#39;t want this client owned socket to close itself after an `exec` system call.</span>
+        <span class="n">fcntl</span><span class="o">.</span><span class="n">fcntl</span><span class="p">(</span><span class="n">client_socket</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">F_SETFD</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_CLOEXEC</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;new client @{}:{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">client_addr</span><span class="p">,</span> <span class="n">client_port</span><span class="p">))</span>
+
+        <span class="c1"># We trick using a global here. Also, in real life,</span>
+        <span class="c1"># the &quot;processing&quot; part have to be asynchronous, or delayed</span>
+        <span class="c1"># into some worker processes (or both!).</span>
+        <span class="c1"># </span>
+        <span class="c1"># Here, we handle clients sequentially and individually for the sake of</span>
+        <span class="c1"># clarity and understanding</span>
+        <span class="n">client_sockets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">client_socket</span><span class="p">)</span>
+        <span class="n">client_processing</span><span class="p">(</span><span class="n">client_socket</span><span class="p">)</span>
+        <span class="n">client_sockets</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">client_socket</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;client {client_addr}:{client_port} disconnected&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;[*] Running</span><span class="se">\n</span><span class="s1">[*] host: localhost, port: 8000,  pid: {os.getpid()}&#39;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;executes `kill -s SIGUSR1 {os.getpid()}` in a shell to trigger a &quot;live-reload&quot;&#39;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;executes `nc localhost 8000` to establish a connection&#39;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;The server waits for the input &quot;hello&quot;, then answers and closes the connection.&#39;</span><span class="p">)</span>
+
+    <span class="n">p</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">prog</span><span class="o">=</span><span class="s1">&#39;Fork+exec python example&#39;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;filedescriptors&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="k">print</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">filedescriptors</span><span class="p">):</span>
+        <span class="c1"># hot reload case</span>
+        <span class="n">start</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">filedescriptors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">args</span><span class="o">.</span><span class="n">filedescriptors</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">start</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="p">[])</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+
+<h1>More ressources on the subject:</h1>
+<ul>
+<li><a href="https://uwsgi-docs.readthedocs.io/en/latest/articles/TheArtOfGracefulReloading.html">uWSGI - The art of Graceful Reloading</a></li>
+<li><a href="https://www.gamlor.info/wordpress/2016/08/code-reloading-in-clojure/">Hot reloading in Clojure code</a></li>
+<li><a href="https://www.gnu.org/software/libc/manual/html_node/Descriptor-Flags.html">File Descriptor Flags (FD_CLOEXEC used as fcntl argument)</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Fork%E2%80%93exec">Forkexec on wikipedia</a></li>
+<li><a href="http://man7.org/linux/man-pages/man2/socket.2.html">socket - GNU MAN</a></li>
+<li><a href="https://docs.python.org/3/library/socket.html#socket.fromfd">Python's documentation about <code>socket.fromfd</code></a></li>
+</ul>
+    </div>
+
+    <footer>
+        <div class="tags">
+            <a href="./tag/linux.html">Linux</a>
+            <a href="./tag/fork.html">Fork</a>
+            <a href="./tag/exec.html">Exec</a>
+            <a href="./tag/socket.html">Socket</a>
+        </div>
+        <div class="pure-g post-footer">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <div class="pure-g poster-info">
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./author/devsda.html">devsda</a></h3>
+                        <p class="author-description">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+
+    </footer>
+
+    <div class="entry-content">
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'devsda';
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+
+</div>
+
+
+
+    <footer class="index-footer">
+
+        <a href="./" title="devsda - blog">devsda - blog</a>
+        <a href="./category/less-tech.html">Less tech</a>
+        <a href="./category/tech.html">tech</a>
+        <a href="http://getpelican.com/">Pelican</a>
+        <a href="http://python.org/">Python.org</a>
+        <a href="https://www.laquadrature.net/fr">La Quadrature du Net</a>
+
+    </footer>
+
+</body>
+</html>

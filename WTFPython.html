@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <title>WTF Python</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="./theme/css/main.css" />
+        <link href="http://blog.devsda.fr/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Full Atom Feed" />
+        <link href="http://blog.devsda.fr/feeds/{slug}.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Categories Atom Feed" />
+</head>
+<body>
+
+    <div class="navigation pure-menu pure-menu-horizontal">
+        <a href="./" class="pure-menu-heading  pure-menu-link">devsda - blog</a>
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"></li>
+
+            <li class="pure-menu-item"><a href="./category/less-tech.html" class="pure-menu-link">Less tech</a></li>
+            <li class="pure-menu-item pure-menu-selected"><a href="./category/tech.html" class="pure-menu-link">tech</a></li>
+        </ul>
+    </div>
+
+
+<div class="page-container">
+    <div class="entry-content">
+        <div class="post-meta pure-g">
+<div class="pure-u-3-4 meta-data">
+    <a href="./category/tech.html" class="category">Tech</a><br />
+
+    <a class="author" href="./author/devsda.html">devsda</a>
+    &mdash; <abbr title="2016-09-03T22:20:00+02:00">sam. 03 septembre 2016</abbr>
+</div>        </div>
+    </div>
+
+    <div class="article-header-container">
+        <div class="background-image-container">
+
+            <div class="background-image" style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(../images/bite-python.jpg);">
+                <img src="../images/bite-python.jpg" alt="WTF Python">
+                <div class="title">
+                <h1>
+                    WTF Python
+                </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry-content">
+        <h2>Le paradoxe objet</h2>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>    <span class="c1"># même un simple `integer` est un objet. Des parenthèses sont nécessaires pour</span>
+            <span class="c1"># accéder aux attributs.</span>
+</pre></div>
+
+
+<p>En python, tout est objet... donc une banale fonction est un objet,
+comportant une methode <code>__call__</code> qui permet l'appel via la syntaxe <code>function( * arguments )</code>.
+Donc, une methode <code>__call__</code> est un object  callable  qui ... possède une méthode <code>__call__</code>...</p>
+<p>L'extrait suivant est valide:</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="fm">__call__</span><span class="p">()</span> <span class="o">=</span> <span class="n">a</span><span class="p">()</span>
+<span class="bp">True</span>
+</pre></div>
+
+
+<p>idem :</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="fm">__call__</span><span class="o">.</span><span class="fm">__call__</span><span class="o">.</span><span class="fm">__call__</span><span class="o">.</span><span class="fm">__call__</span><span class="o">.</span><span class="fm">__call__</span><span class="p">()</span> <span class="o">==</span> <span class="n">a</span><span class="p">()</span>
+<span class="bp">True</span>
+</pre></div>
+
+
+<p>On peut aller loin :)
+À l'heure actuelle, je n'ai pas une idée précise de ce qu'il se passe dans
+les <em>internals</em> de cpython.
+Parce que:</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">a</span><span class="p">():</span> <span class="k">print</span><span class="p">(</span><span class="s1">&#39;yop&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">_call_</span>
+<span class="o">&lt;</span><span class="n">method</span><span class="o">-</span><span class="n">wrapper</span> <span class="s1">&#39;_call_&#39;</span><span class="n">of</span> <span class="n">function</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x7f3e3db589d8</span><span class="o">&gt;</span>
+
+<span class="p">[</span><span class="o">...</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">_call_</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">_call_</span><span class="o">.</span><span class="n">_call_</span><span class="p">)</span>
+<span class="o">&lt;</span><span class="n">method</span><span class="o">-</span><span class="n">wrapper</span> <span class="s1">&#39;_call_&#39;</span><span class="n">of</span> <span class="n">function</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x7f3e3db589d8</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">method</span><span class="o">-</span><span class="n">wrapper</span> <span class="s1">&#39;_call_&#39;</span><span class="n">of</span> <span class="n">method</span><span class="o">-</span><span class="n">wrapper</span> <span class="nb">object</span> <span class="n">at</span> <span class="mh">0x7f3e3db6d320</span><span class="o">&gt;</span>
+</pre></div>
+
+
+<p>Si c'était un objet avec une référence <code>__call__</code> sur lui même, ok, mais
+<code>0x7f3e3db6d320</code> et <code>0x7f3e3db589d8</code> ne réfèrent pas aux mêmes objets.</p>
+<h2>Multiples clefs</h2>
+<p><img alt="python-mul" src="./images/snake-anat.png"></p>
+<p>Pour chopper des valeures profondément enfouies
+dans des dictionnaires imbriqués avec <a href="https://docs.python.org/3/library/functools.html#functools.reduce">reduce</a>:</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="nb">reduce</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+<span class="o">...</span>   <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+<span class="o">...</span>   <span class="s1">&#39;sub&#39;</span><span class="p">:</span> <span class="p">{</span>
+<span class="o">...</span>     <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">5</span>
+<span class="o">...</span>   <span class="p">}</span>
+<span class="o">...</span> <span class="p">}</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">reduce</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">get</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;sub&#39;</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">),</span> <span class="n">d</span><span class="p">)</span>
+<span class="mi">5</span>
+</pre></div>
+
+
+<p>Un usage pas forcément super intuitif de la fonction <code>reduce</code>.
+On peut même la tweaker en lui filant
+<code>lambda x, k: x.__getitem__(k)</code>, ce qui permet d'y imbriquer des listes en plus, et
+de spécifier leur index dans le  tuple  en second argument de  reduce .
+Du genre:</p>
+<div class="highlight"><pre><span></span><span class="nb">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">k</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;un&#39;</span><span class="p">,</span> <span class="s1">&#39;truc&#39;</span><span class="p">,</span> <span class="s1">&#39;bien&#39;</span><span class="p">,</span> <span class="s1">&#39;enfoui&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;la_valeur&#39;</span><span class="p">),</span> <span class="n">d</span><span class="p">)</span>
+
+<span class="c1"># équivalent à</span>
+<span class="n">d</span><span class="p">[</span><span class="s1">&#39;un&#39;</span><span class="p">][</span><span class="s1">&#39;truc&#39;</span><span class="p">][</span><span class="s1">&#39;bien&#39;</span><span class="p">][</span><span class="s1">&#39;enfoui&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;la_valeur&#39;</span><span class="p">]</span>
+</pre></div>
+
+
+<h2>Fonctions spécialisées avec <em>functools.partial</em></h2>
+<p>c4399ffdae1070fcd476157f4ab4109448d15b77</p>
+<p><img alt="safe" src="./images/safe.gif"></p>
+<p>Rien de très inédit ici.
+Les <a href="https://en.wikipedia.org/wiki/Partial application">application partielles</a> des fonctions (<em>partial application</em>) sont
+un moyen élégant de spécialiser des fonctions. La spécialisation permet alors un niveau d'abstraction
+via la rétention des paramètres initiaux, qui sont alors "masqués" lors de l'usage final de la fonction
+spécialisée.</p>
+<p>Voir aussi : <a href="https://en.wikipedia.org/wiki/Closure_(computer_programming)">closures</a>.</p>
+<div class="highlight"><pre><span></span><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">acc</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="nb">map</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">list</span><span class="p">(</span><span class="n">acc</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]))</span>
+<span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+</pre></div>
+
+
+<p><code>list()</code> permet ici d'itérer au fil du générateur, et ainsi d'obtenir une liste des résultats.
+Le comportement des générateurs ainsi des fonctions "plus classiques" est évidemment conservé.</p>
+<p><em>ps: Il me semble qu'un mec m'a montré une fois comment assigner une autre valeur à la valeur
+d'un entier littéral (du genre, vraiment '2 == 3' qui renvoit 'True').</em>
+<em>Je suis quasi-sûr que c'était avec Python, mais aucune idée de la version.
+N'hésitez pas à vous manifester si cela vous
+dit quelque chose :)</em></p>
+<p><em>Cela vaut aussi pour n'importe quoi d'autre que vous jugez utile de rajouter dans l'article</em></p>
+    </div>
+
+    <footer>
+        <div class="tags">
+            <a href="./tag/python.html">python</a>
+        </div>
+        <div class="pure-g post-footer">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <div class="pure-g poster-info">
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./author/devsda.html">devsda</a></h3>
+                        <p class="author-description">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+
+    </footer>
+
+    <div class="entry-content">
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'devsda';
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+
+</div>
+
+
+
+    <footer class="index-footer">
+
+        <a href="./" title="devsda - blog">devsda - blog</a>
+        <a href="./category/less-tech.html">Less tech</a>
+        <a href="./category/tech.html">tech</a>
+        <a href="http://getpelican.com/">Pelican</a>
+        <a href="http://python.org/">Python.org</a>
+        <a href="https://www.laquadrature.net/fr">La Quadrature du Net</a>
+
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <title>SSH Honey pot avec python et paramiko</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="./theme/css/main.css" />
+        <link href="http://blog.devsda.fr/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Full Atom Feed" />
+        <link href="http://blog.devsda.fr/feeds/{slug}.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Categories Atom Feed" />
+</head>
+<body>
+
+    <div class="navigation pure-menu pure-menu-horizontal">
+        <a href="./" class="pure-menu-heading  pure-menu-link">devsda - blog</a>
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"></li>
+
+            <li class="pure-menu-item"><a href="./category/less-tech.html" class="pure-menu-link">Less tech</a></li>
+            <li class="pure-menu-item pure-menu-selected"><a href="./category/tech.html" class="pure-menu-link">tech</a></li>
+        </ul>
+    </div>
+
+
+<div class="page-container">
+    <div class="entry-content">
+        <div class="post-meta pure-g">
+            <div class="pure-u">
+                <a href="./category/tech.html"><img src="../images/tech.jpg " class="post-avatar" alt="tech"></a>
+            </div>
+<div class="pure-u-3-4 meta-data">
+    <a href="./category/tech.html" class="category">tech</a><br />
+
+    <a class="author" href="./author/thomas.html">Thomas</a>
+    &mdash; <abbr title="2014-12-19T10:20:00+01:00">ven. 19 décembre 2014</abbr>
+</div>        </div>
+    </div>
+
+    <div class="article-header-container">
+        <div class="background-image-container">
+
+            <div class="background-image-small">
+                <img src="../images/honey.jpg" alt="SSH Honey pot avec python et paramiko">
+                <div class="title-container">
+                    <h1>SSH Honey pot avec python et paramiko</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry-content">
+        <p>Ces derniers temps, je me suis un peu interessé à la librairie <code>paramiko</code> qui permet d'abstraire le protocole SSH avec python.
+J'en ai profité pour réaliser un petit honeypot ssh histoire d'exporer les possibilités de cette libraire.</p>
+<h2>Serveur - paramiko.ServerInterface</h2>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">paramiko</span>
+
+<span class="n">paramiko</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">log_to_file</span><span class="p">(</span><span class="s1">&#39;demo_server.log&#39;</span><span class="p">)</span>
+<span class="n">host_key</span> <span class="o">=</span> <span class="n">paramiko</span><span class="o">.</span><span class="n">RSAKey</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;test_rsa.key&#39;</span><span class="p">)</span>
+
+<span class="c1"># implémentation des différentes méthodes qui vont nous servir.</span>
+<span class="c1"># On a pas besoin de grand chose, étant donné que l&#39;on veut juste</span>
+<span class="c1"># récupérer les identifiants et non établir une vraie connexion SSH.</span>
+
+<span class="k">class</span> <span class="nc">Server</span> <span class="p">(</span><span class="n">paramiko</span><span class="o">.</span><span class="n">ServerInterface</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Paramiko powered SSH Server - basic implementation&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">check_auth_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;{}:{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">paramiko</span><span class="o">.</span><span class="n">AUTH_FAILED</span>
+
+    <span class="k">def</span> <span class="nf">get_allowed_auths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a comma separated list of</span>
+<span class="sd">        valid auth.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;password&#39;</span>
+</pre></div>
+
+
+<p>Voilà, ça ne fait pas beaucoup de code. On a redéfini quelques méthodes de paramiko.ServerInterface :</p>
+<h4>get_allowed_auths :</h4>
+<p>D'après la doc:</p>
+<div class="highlight"><pre><span></span><span class="nv">get_allowed_auths</span><span class="ss">(</span><span class="nv">username</span><span class="ss">)</span>
+<span class="k">Return</span> <span class="nv">a</span> <span class="nv">list</span> <span class="nv">of</span> <span class="nv">authentication</span> <span class="nv">methods</span> <span class="nv">supported</span> <span class="nv">by</span> <span class="nv">the</span> <span class="nv">server</span>. <span class="nv">This</span> <span class="nv">list</span> <span class="nv">is</span> <span class="nv">sent</span> <span class="nv">to</span> <span class="nv">clients</span> <span class="nv">attempting</span> <span class="nv">to</span> <span class="nv">authenticate</span>, <span class="nv">to</span> <span class="nv">inform</span> <span class="nv">them</span> <span class="nv">of</span> <span class="nv">authentication</span> <span class="nv">methods</span> <span class="nv">that</span> <span class="nv">might</span> <span class="nv">be</span> <span class="nv">successful</span>.
+
+<span class="nv">The</span> “<span class="nv">list</span>” <span class="nv">is</span> <span class="nv">actually</span> <span class="nv">a</span> <span class="nv">string</span> <span class="nv">of</span> <span class="nv">comma</span><span class="o">-</span><span class="nv">separated</span> <span class="nv">names</span> <span class="nv">of</span> <span class="nv">types</span> <span class="nv">of</span> <span class="nv">authentication</span>. <span class="nv">Possible</span> <span class="nv">values</span> <span class="nv">are</span> <span class="s2">&quot;</span><span class="s">password</span><span class="s2">&quot;</span>, <span class="s2">&quot;</span><span class="s">publickey</span><span class="s2">&quot;</span>, <span class="nv">and</span> <span class="s2">&quot;</span><span class="s">none</span><span class="s2">&quot;</span>.
+
+<span class="nv">The</span> <span class="nv">default</span> <span class="nv">implementation</span> <span class="nv">always</span> <span class="nv">returns</span> <span class="s2">&quot;</span><span class="s">password</span><span class="s2">&quot;</span>.
+</pre></div>
+
+
+<p>cette fonction permet de préciser au client par quel(s) moyen(s) il peut se connecter à ce serveur SSH.</p>
+<h4>check_auth_password :</h4>
+<p>Egalement, d'après la doc:</p>
+<div class="highlight"><pre><span></span><span class="nv">check_auth_password</span><span class="ss">(</span><span class="nv">username</span>, <span class="nv">password</span><span class="ss">)</span>
+<span class="nv">Determine</span> <span class="k">if</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">username</span> <span class="nv">and</span> <span class="nv">password</span> <span class="nv">supplied</span> <span class="nv">by</span> <span class="nv">the</span> <span class="nv">client</span> <span class="nv">is</span> <span class="nv">acceptable</span> <span class="k">for</span> <span class="nv">use</span> <span class="nv">in</span> <span class="nv">authentication</span>.
+
+<span class="k">Return</span> <span class="nv">AUTH_FAILED</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">password</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">accepted</span>, <span class="nv">AUTH_SUCCESSFUL</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">password</span> <span class="nv">is</span> <span class="nv">accepted</span> <span class="nv">and</span> <span class="nv">completes</span> <span class="nv">the</span> <span class="nv">authentication</span>, <span class="nv">or</span> <span class="nv">AUTH_PARTIALLY_SUCCESSFUL</span> <span class="k">if</span> <span class="nv">your</span> <span class="nv">authentication</span> <span class="nv">is</span> <span class="nv">stateful</span>, <span class="nv">and</span> <span class="nv">this</span> <span class="nv">key</span> <span class="nv">is</span> <span class="nv">accepted</span> <span class="k">for</span> <span class="nv">authentication</span>, <span class="nv">but</span> <span class="nv">more</span> <span class="nv">authentication</span> <span class="nv">is</span> <span class="nv">required</span>. <span class="ss">(</span><span class="nv">In</span> <span class="nv">this</span> <span class="nv">latter</span> <span class="nv">case</span>, <span class="nv">get_allowed_auths</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">called</span> <span class="nv">to</span> <span class="nv">report</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">client</span> <span class="nv">what</span> <span class="nv">options</span> <span class="nv">it</span> <span class="nv">has</span> <span class="k">for</span> <span class="nv">continuing</span> <span class="nv">the</span> <span class="nv">authentication</span>.<span class="ss">)</span>
+
+<span class="nv">The</span> <span class="nv">default</span> <span class="nv">implementation</span> <span class="nv">always</span> <span class="nv">returns</span> <span class="nv">AUTH_FAILED</span>.
+</pre></div>
+
+
+<p>Cette fonction s'occupe donc de vérifier l'authenticité du mot de passe et du nom d'utilisateur.</p>
+<h2>Accepter des connexions entrantes:</h2>
+<p>Plus commode, on va créer une socket et la <em>binder</em> sur le port voulu.</p>
+<div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+</pre></div>
+
+
+<div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1025</span><span class="p">))</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Listening ...&#39;</span><span class="p">)</span>
+    <span class="n">client</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+
+<p>C'est pas super joli, ni maintenable (le code est à l'arrache dans l'espace global), mais ça devrait faire l'affaire.
+Y'a plus qu'à faire quelque chose de <code>client, addr</code>, les donner à notre serveur pour qu'il s'occupe de l'intéraction SSH.
+Ce bout de code bloque à la ligne <code>client, addr = sock.accept()</code>. Si l'execution va plus loin que block <code>except</code>, c'est qu'on a un client connecté.</p>
+<div class="highlight"><pre><span></span><span class="c1"># on instancie un nouveau Transport avec notre socket client.</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">paramiko</span><span class="o">.</span><span class="n">Transport</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+<span class="n">t</span><span class="o">.</span><span class="n">add_server_key</span><span class="p">(</span><span class="n">host_key</span><span class="p">)</span>
+<span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">()</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">start_server</span><span class="p">(</span><span class="n">server</span><span class="o">=</span><span class="n">server</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">paramiko</span><span class="o">.</span><span class="n">SSHException</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># wait for auth</span>
+<span class="n">chan</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">accept</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">chan</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;channel lost.&#39;</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="c1"># on n&#39;arrivera jamais jusqu&#39;ici.</span>
+<span class="n">chan</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+
+
+<h3>Plus qu'à tester:</h3>
+<div class="highlight"><pre><span></span><span class="o">(</span>venv<span class="o">)[</span>thomas@jake ssh-honey<span class="o">]</span>$ python main.py
+Listening <span class="k">for</span> connection ...
+root:toto
+root:tutu
+root:titi
+channel lost.
+</pre></div>
+
+
+<p>Depuis un autre terminal:</p>
+<div class="highlight"><pre><span></span><span class="o">[</span>thomas@jake ~<span class="o">]</span>$ ssh root@localhost -p <span class="m">1025</span>
+root@localhost<span class="s1">&#39;s password:</span>
+<span class="s1">Permission denied, please try again.</span>
+<span class="s1">root@localhost&#39;</span>s password:
+Permission denied, please try again.
+root@localhost<span class="err">&#39;</span>s password:
+Permission denied <span class="o">(</span>password<span class="o">)</span>.
+</pre></div>
+
+
+<p>Et voilà. Cette implémentation reste assez minimaliste, et je ne pense pas que cette base de code puisse réellement être utilisée pour un honey pot (du moins, sans quelques ajouts.)
+Mais ça illustre bien l'approche de <em>paramiko</em>.
+Prochaine étape, faire en sorte que le serveur puisse gérer plusieurs connexions simutanées (<em>asyncIO</em> ?)</p>
+<h4>Intégralité du code source d'exemple:</h4>
+<div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+
+
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">paramiko</span>
+
+<span class="c1"># logging</span>
+
+<span class="n">paramiko</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">log_to_file</span><span class="p">(</span><span class="s1">&#39;demo_server.log&#39;</span><span class="p">)</span>
+
+<span class="n">host_key</span> <span class="o">=</span> <span class="n">paramiko</span><span class="o">.</span><span class="n">RSAKey</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;test_rsa.key&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">Server</span> <span class="p">(</span><span class="n">paramiko</span><span class="o">.</span><span class="n">ServerInterface</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Paramiko powered SSH Server - basic implementation&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">check_auth_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;{}:{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">paramiko</span><span class="o">.</span><span class="n">AUTH_FAILED</span>
+
+    <span class="k">def</span> <span class="nf">get_allowed_auths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">username</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a comma separated list of</span>
+<span class="sd">        valid auth.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;password&#39;</span>
+
+
+<span class="c1"># socket creation</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_REUSEADDR</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1025</span><span class="p">))</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;Listening ...&#39;</span><span class="p">)</span>
+    <span class="n">client</span><span class="p">,</span> <span class="n">addr</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">paramiko</span><span class="o">.</span><span class="n">Transport</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
+
+<span class="n">t</span><span class="o">.</span><span class="n">add_server_key</span><span class="p">(</span><span class="n">host_key</span><span class="p">)</span>
+<span class="n">server</span> <span class="o">=</span> <span class="n">Server</span><span class="p">()</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">t</span><span class="o">.</span><span class="n">start_server</span><span class="p">(</span><span class="n">server</span><span class="o">=</span><span class="n">server</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">paramiko</span><span class="o">.</span><span class="n">SSHException</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># wait for auth</span>
+<span class="n">chan</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">accept</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">chan</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;channel lost.&#39;</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">chan</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+    </div>
+
+    <footer>
+        <div class="tags">
+            <a href="./tag/python.html">python</a>
+            <a href="./tag/paramiko.html">paramiko</a>
+            <a href="./tag/ssh.html">ssh</a>
+        </div>
+        <div class="pure-g post-footer">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <div class="pure-g poster-info">
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./author/thomas.html">Thomas</a></h3>
+                        <p class="author-description">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="pure-u-1 pure-u-md-1-2">
+
+                <div class="pure-g post-category-info">
+                    <div class="pure-u">
+                        <a href="./category/tech.html"><img src="../images/tech.jpg" alt=""></a>
+                    </div>
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./category/tech.html">tech</a></h3>
+                        <p class="author-description">
+                          Tech/code related stuff
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </footer>
+
+    <div class="entry-content">
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'devsda';
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+
+</div>
+
+
+
+    <footer class="index-footer">
+
+        <a href="./" title="devsda - blog">devsda - blog</a>
+        <a href="./category/less-tech.html">Less tech</a>
+        <a href="./category/tech.html">tech</a>
+        <a href="http://getpelican.com/">Pelican</a>
+        <a href="http://python.org/">Python.org</a>
+        <a href="https://www.laquadrature.net/fr">La Quadrature du Net</a>
+
+    </footer>
+
+</body>
+</html>

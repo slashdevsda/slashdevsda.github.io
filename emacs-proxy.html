@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <title>Emacs and HTTP(s) proxies</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="./theme/css/main.css" />
+        <link href="http://blog.devsda.fr/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Full Atom Feed" />
+        <link href="http://blog.devsda.fr/feeds/{slug}.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Categories Atom Feed" />
+</head>
+<body>
+
+    <div class="navigation pure-menu pure-menu-horizontal">
+        <a href="./" class="pure-menu-heading  pure-menu-link">devsda - blog</a>
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"></li>
+
+            <li class="pure-menu-item"><a href="./category/less-tech.html" class="pure-menu-link">Less tech</a></li>
+            <li class="pure-menu-item pure-menu-selected"><a href="./category/tech.html" class="pure-menu-link">tech</a></li>
+        </ul>
+    </div>
+
+
+<div class="page-container">
+    <div class="entry-content">
+        <div class="post-meta pure-g">
+            <div class="pure-u">
+                <a href="./category/tech.html"><img src="../images/tech.jpg " class="post-avatar" alt="tech"></a>
+            </div>
+<div class="pure-u-3-4 meta-data">
+    <a href="./category/tech.html" class="category">tech</a><br />
+
+    <a class="author" href="./author/thomas.html">Thomas</a>
+    &mdash; <abbr title="2016-10-26T10:20:00+02:00">mer. 26 octobre 2016</abbr>
+</div>        </div>
+    </div>
+
+    <div class="article-header-container">
+        <div class="background-image-container">
+
+            <div class="background-image" style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(../images/restclient.jpg);">
+                <img src="../images/restclient.jpg" alt="Emacs and HTTP(s) proxies">
+                <div class="title">
+                <h1>
+                    Emacs and HTTP(s) proxies
+                </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry-content">
+        <p>If you are using emacs and HTTP related functionalities, you
+could use the following snippet to reach a domain through an HTTP proxy.
+It works for most of the stuff I've tested so far, including
+the handy <a href="https://github.com/pashky/restclient.el">rest-client</a> and <code>package-*</code>.</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="nb">defun</span> <span class="nv">unset-proxy</span>
+    <span class="p">(</span><span class="nv">&amp;args</span><span class="p">)</span>
+  <span class="p">(</span><span class="nv">interactive</span> <span class="s">&quot;p&quot;</span><span class="p">)</span>
+  <span class="p">(</span><span class="nv">setenv</span> <span class="s">&quot;http_proxy&quot;</span> <span class="no">nil</span><span class="p">)</span>
+  <span class="p">(</span><span class="nv">setenv</span> <span class="s">&quot;https_proxy&quot;</span> <span class="no">nil</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">setq</span> <span class="nv">url-proxy-services</span> <span class="no">nil</span><span class="p">))</span>
+
+
+<span class="p">(</span><span class="nb">defun</span> <span class="nv">set-proxy</span>
+    <span class="p">(</span><span class="nv">&amp;args</span><span class="p">)</span>
+  <span class="p">(</span><span class="nv">interactive</span> <span class="s">&quot;p&quot;</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">setq</span> <span class="nv">url-proxy-services</span>
+    <span class="o">&#39;</span><span class="p">((</span><span class="s">&quot;no_proxy&quot;</span> <span class="o">.</span> <span class="s">&quot;^\\(localhost\\|127.*\\)&quot;</span><span class="p">)</span>
+      <span class="p">(</span><span class="s">&quot;http&quot;</span> <span class="o">.</span> <span class="s">&quot;proxy.yourdomain.com:8080&quot;</span><span class="p">)</span>
+      <span class="p">(</span><span class="s">&quot;https&quot;</span> <span class="o">.</span> <span class="s">&quot;proxy.yourdomain.com:8080&quot;</span><span class="p">))))</span>
+</pre></div>
+
+
+<p>Just after evaluation, you can use <code>M-x set-proxy</code> and <code>M-x unset-proxy</code>.</p>
+    </div>
+
+    <footer>
+        <div class="tags">
+            <a href="./tag/emacs.html">emacs</a>
+        </div>
+        <div class="pure-g post-footer">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <div class="pure-g poster-info">
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./author/thomas.html">Thomas</a></h3>
+                        <p class="author-description">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="pure-u-1 pure-u-md-1-2">
+
+                <div class="pure-g post-category-info">
+                    <div class="pure-u">
+                        <a href="./category/tech.html"><img src="../images/tech.jpg" alt=""></a>
+                    </div>
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./category/tech.html">tech</a></h3>
+                        <p class="author-description">
+                          Tech/code related stuff
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </footer>
+
+    <div class="entry-content">
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'devsda';
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+
+</div>
+
+
+
+    <footer class="index-footer">
+
+        <a href="./" title="devsda - blog">devsda - blog</a>
+        <a href="./category/less-tech.html">Less tech</a>
+        <a href="./category/tech.html">tech</a>
+        <a href="http://getpelican.com/">Pelican</a>
+        <a href="http://python.org/">Python.org</a>
+        <a href="https://www.laquadrature.net/fr">La Quadrature du Net</a>
+
+    </footer>
+
+</body>
+</html>

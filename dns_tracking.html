@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <title>DNS tracking & identification</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="./theme/css/main.css" />
+        <link href="http://blog.devsda.fr/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Full Atom Feed" />
+        <link href="http://blog.devsda.fr/feeds/{slug}.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Categories Atom Feed" />
+</head>
+<body>
+
+    <div class="navigation pure-menu pure-menu-horizontal">
+        <a href="./" class="pure-menu-heading  pure-menu-link">devsda - blog</a>
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"></li>
+
+            <li class="pure-menu-item"><a href="./category/less-tech.html" class="pure-menu-link">Less tech</a></li>
+            <li class="pure-menu-item pure-menu-selected"><a href="./category/tech.html" class="pure-menu-link">tech</a></li>
+        </ul>
+    </div>
+
+
+<div class="page-container">
+    <div class="entry-content">
+        <div class="post-meta pure-g">
+            <div class="pure-u">
+                <a href="./category/tech.html"><img src="../images/tech.jpg " class="post-avatar" alt="tech"></a>
+            </div>
+<div class="pure-u-3-4 meta-data">
+    <a href="./category/tech.html" class="category">tech</a><br />
+
+    <a class="author" href="./author/thomas.html">Thomas</a>
+    &mdash; <abbr title="2019-09-02T00:05:00+02:00">lun. 02 septembre 2019</abbr>
+</div>        </div>
+    </div>
+
+    <div class="article-header-container">
+        <div class="background-image-container">
+
+            <div class="background-image" style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(../images/spy.png);">
+                <img src="../images/spy.png" alt="DNS tracking & identification">
+                <div class="title">
+                <h1>
+                    DNS tracking & identification
+                </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry-content">
+        <h1>Context</h1>
+<p>I work in the advertising field. Months ago, I heard about DNS Cookies but did not believe that one can actually track people using it.
+I was wrong</p>
+<p>So we had that website, <a href="http://www.dnscookie.com/">dnscookie.com</a> hitting the top on hackernews.</p>
+<p>Eventually, in the advertising field, a lot of people asked themselves about it. 
+dnscookie.com explains basically how we can track users using DNS Cookies, but (IMHO) is not very precise.</p>
+<p>I decided to take a look on my spare time and publish everything I learnt.</p>
+<p>In my own point of view, explaining this method to "everyone" is a way to prevent abuses from avertising companies.</p>
+<hr>
+<p>I'll use the term "DNS tracking" instead of DNS Cookie, to avoid confusion with <a href="https://tools.ietf.org/html/rfc7873">RFC 7873</a></p>
+<h1>General Explanation</h1>
+<p>There is two important things involved in order to track users using DNS.</p>
+<ul>
+<li><a href="https://tools.ietf.org/html/rfc7873">RFC 7873</a>: DNS Cookies. It allows "grouping" DNS Queries and answers per clients, at server side, by doing, eg, log UDP network analysis.</li>
+<li>HTTP has to be used at some point. Individual HTTP Queries have to be correlated with DNS activity, especially when <em>the DNS cache is hit</em></li>
+</ul>
+<p>The general method can be explained in 4 steps, with 4 prerequesites.</p>
+<ul>
+<li>You own and control the authoritative DNS Server involved</li>
+<li>Same for HTTP Servers</li>
+<li>You have to hack both to emit various events in real time, ie, DNS resolutions and HTTP GET queries</li>
+<li>You have to be able to correlate events emited by those below, in <em>pseudo-realtime</em></li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ul>
+<li>
+<p><strong>(1)</strong>: Force a client to perform DNS resolutions on various subdomains subsequently followed by HTTP queries.<br>
+  This is achieved by including <em>statics</em> within a webpage, like images or even fonts (using CSS for tracking? Who cares).</p>
+</li>
+<li>
+<p><strong>(2)</strong>: Extract DNS resolutions performed by a single client (identifiable using the DNS Cookie) in step (1).<br>
+  Those could be missing if the client is already known (== DNS answer still in client's cache).</p>
+</li>
+<li>
+<p><strong>(3)</strong>: HTTP requests are fired by the browser to fetch statics, on domains previously resolved in (1) or stored in DNS cache.<br>
+  Considering 2 backend HTTP Servers and 32 HTTP queries distributed (randomly) on both, this creates or recreates<br>
+<em>a 32 bits identifier</em>. </p>
+</li>
+<li>
+<p><strong>(4)</strong>: as every resouce queried in HTTP is uniquely identifiable, correlating batches of 32 queries on multiple backend servers allow us to 
+  forge a somewhat reliable identifier.<br>
+  If the client is already known, the step (1) and (2) are skipped, because DNS answers are still in the client's cache, 
+  and the distribution on backends HTTP server will be the same. Leading to the same identifier.</p>
+</li>
+</ul>
+<p>It's somewhat important to avoid any browser-based caching at step (3). 
+This is prevented by using unique URLs, as the initial index.html (or whatever includes our 32 statics inclusion) is generated on-the-fly for each HTTP query.</p>
+<h1>Sequence Diagram</h1>
+<p>example.com has IP <em>10.10.0.1</em></p>
+<p>Two IP are used to determine/forge an identifier, <em>10.10.1.1</em> and <em>10.10.1.2</em></p>
+<p><img alt="" src="../images/dns_cookie_tracking.png"></p>
+<h1>Efficiencies</h1>
+<p>I was able to track myself, even while switching to <em>private navigation</em>, with a high rate of success.
+(from my own <em>poc</em>, failures were essentially due to errors/imprecisions in my code)</p>
+<p>It's like the same DNS cache is shared in major web browsers, <strong>even when private navigation is used</strong>. I'll be happy if someone could confirm/infirm this.</p>
+<p>From an advertiser point of view, this could complete a more traditionnal <em>cookie-based</em> approach. </p>
+<h1>Possible inefficiencies</h1>
+<h2>Cache control</h2>
+<p>Due to the recursive nature of the DNS, multiple levels of caching could be an issue.</p>
+<h2>Shared cache</h2>
+<p>If the cache is shared against many clients, It become hard to track a single user. </p>
+<p>This kind of setup is common within entreprise-grade networks.
+This could eventually be tricked by using a large number of sudomains, or dynamic subdomains using unique identifiers.</p>
+<p>At this point, a large and frequent load of DNS resolutions using high domain entropy could trigger some intrusion detection systems. </p>
+<h2>Reaction from vendors</h2>
+<p>I don't know the major web-browser positions on this topic.
+From my (naive) perspective, Countermeasures could be easily implemented client-side, eg, by ignoring supplied DNS cookies.</p>
+<h2>Available Countermeasures</h2>
+<p>I don't know any simple trick to avoid this tracking. If it's well implemented, it's pretty efficient.
+Once again, if someone has an idea, let me know.</p>
+<h1>My point of view</h1>
+<p>The traditionnal use of HTTP Cookies for tracking purpose is already somewhat an abuse.</p>
+<p>DNS tracking <em>abuses</em> a different level, the DNS Protocol and DNS-Cookies. 
+It's similar to a de-anonymisation attack. Cache is abused and logs from two differents protocols (DNS/HTTP) are correlated.</p>
+<p>Considering the GDPR, the DNS cookie could be considered as something that permits unique identification. </p>
+<p>Anyway, it's hard to believe that the "online advertising world" is trying to help consumers using such ... nasty tricks? </p>
+<p>I'd better bet on privacy to regain consumers trust, then try to disrupt how preferences and behavior are used, to offer more control to the end-user and a less invasive approach. But that's way too utopic because ... nobody likes ads?</p>
+    </div>
+
+    <footer>
+        <div class="tags">
+            <a href="./tag/advertising.html">advertising</a>
+            <a href="./tag/tracking.html">tracking</a>
+            <a href="./tag/dns.html">DNS</a>
+        </div>
+        <div class="pure-g post-footer">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <div class="pure-g poster-info">
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./author/thomas.html">Thomas</a></h3>
+                        <p class="author-description">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="pure-u-1 pure-u-md-1-2">
+
+                <div class="pure-g post-category-info">
+                    <div class="pure-u">
+                        <a href="./category/tech.html"><img src="../images/tech.jpg" alt=""></a>
+                    </div>
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./category/tech.html">tech</a></h3>
+                        <p class="author-description">
+                          Tech/code related stuff
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </footer>
+
+    <div class="entry-content">
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'devsda';
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+
+</div>
+
+
+
+    <footer class="index-footer">
+
+        <a href="./" title="devsda - blog">devsda - blog</a>
+        <a href="./category/less-tech.html">Less tech</a>
+        <a href="./category/tech.html">tech</a>
+        <a href="http://getpelican.com/">Pelican</a>
+        <a href="http://python.org/">Python.org</a>
+        <a href="https://www.laquadrature.net/fr">La Quadrature du Net</a>
+
+    </footer>
+
+</body>
+</html>

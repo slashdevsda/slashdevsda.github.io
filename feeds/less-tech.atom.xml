@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>devsda - blog - Less tech</title><link href="http://blog.devsda.fr/" rel="alternate"></link><link href="http://blog.devsda.fr/feeds/less-tech.atom.xml" rel="self"></link><id>http://blog.devsda.fr/</id><updated>2018-12-25T14:20:00+01:00</updated><entry><title>A Very Complicated Form of Bacteria</title><link href="http://blog.devsda.fr/bacteria.html" rel="alternate"></link><published>2018-12-25T14:20:00+01:00</published><updated>2018-12-25T14:20:00+01:00</updated><author><name>devsda</name></author><id>tag:blog.devsda.fr,2018-12-25:/bacteria.html</id><summary type="html">&lt;p&gt;Joe Rogan's theory about life and people.&lt;/p&gt;</summary><content type="html">&lt;blockquote&gt;
+&lt;p&gt;I think humain beings, are just a very complicated form of bacteria.&lt;/p&gt;
+&lt;p&gt;If look at the earth as a living organism [...] it's certainly an host for life,
+and we are considered as living organism but really, we're host for life &lt;/p&gt;
+&lt;p&gt;There is more e.-coli living inside our gut than they've ever been people ever!
+There's bacteria that's constantly around you and your body body is fighting that bacteria&lt;/p&gt;
+&lt;p&gt;Until your body grows old and dies. Then it does not fight anymore and that bacteria just eat your body
+That what it does - I mean, that why it's there for.&lt;/p&gt;
+&lt;p&gt;Okay well,&lt;/p&gt;
+&lt;p&gt;If you look at the earth, as this living organism, and like you were flying into LA
+And you're passing over these beautiful mountains, and you see the ocean ahead, it all looks 
+natural and beautiful&lt;/p&gt;
+&lt;p&gt;But then you see LA - W... What the fuck is that? 
+That a growth - that's a cancer, it's big, it's brown and it stinks, and smoke comes out of there&lt;/p&gt;
+&lt;p&gt;And it's get bigger every year. And doesn't matter what you do, it's gonna keep going&lt;/p&gt;
+&lt;p&gt;You could knock it down with a fucking hurricane: it rebuilds&lt;/p&gt;
+&lt;p&gt;Light it on fire: it rebuilds&lt;/p&gt;
+&lt;p&gt;And I think if you were an intelligent life-form from another planet and you were looking at the earth, you wouldn't see individual people,
+you wouldn't see housekeepers, limo drivers and stand-up comedians - you wouldn't see that. &lt;/p&gt;
+&lt;p&gt;You would see mold on a sandwich. I think if you look at us objectively, and the way we're headed and the way we've always been, it does not matter
+how access to information we have, nor matter technological innvovation we have, we always gonna destroy the earth, because I think somehow or another 
+that's what we're supposed to do. &lt;/p&gt;
+&lt;p&gt;I think that's our purpose here on earth, 
+I think we are here to fuck shit up
+I think we're here to eat the sandwich.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;img alt="LA" src="http://blog.devsda.fr/images/la.png"&gt;
+&lt;em&gt;Los Angeles, photo from &lt;a href="https://www.reddit.com/r/LosAngeles/comments/oua9u/los_angeles_from_the_sky_1212012/"&gt;reddit&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Well why is it (Los Angeles) getting bigger?
+Why do people just keep fucking having kids constantly?
+What is this all about?&lt;/p&gt;
+&lt;p&gt;Well, I think, that it's our purpose, much like how yeast makes bread rise or mold takes over a fucking sandwich.&lt;/p&gt;
+&lt;p&gt;I think we're just a very complicated form of bacteria - 
+and all our thoughts on ourselves, it's all just biological tricks to keep your ego alive, to keep your biology alive.&lt;/p&gt;
+&lt;p&gt;To make sure you keep perpetuating this fucking thing.&lt;/p&gt;
+&lt;p&gt;To make this human organism, this one gigantic organism keep growing.&lt;/p&gt;
+&lt;p&gt;If you look at like mold on a sandwich, you don't look at individual mold spores with individual identities and jobs and careers, you look at a pile of fucking mold.
+And that's what people are man, we just think we're individuals.&lt;/p&gt;
+&lt;p&gt;We're not, we're one collective group.
+And this whole complex system of social order and all this shit, might just be ways to effectively move along the breeding process.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;&lt;em&gt;Joe Rogan&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Thumbnail illustration from &lt;a href="http://jd-doria.com/"&gt;http://jd-doria.com/&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;</content><category term="life"></category></entry><entry><title>[fr] Dwarf Fortress</title><link href="http://blog.devsda.fr/dwarf.html" rel="alternate"></link><published>2017-06-08T00:05:00+02:00</published><updated>2017-06-08T00:05:00+02:00</updated><author><name>Thomas</name></author><id>tag:blog.devsda.fr,2017-06-08:/dwarf.html</id><summary type="html">&lt;p&gt;Introduction à Dwarf Fortress: Let's dig&lt;/p&gt;</summary><content type="html">&lt;h1&gt;Dwarf Fortress&lt;/h1&gt;
+&lt;p&gt;&lt;img alt="" src="images/df/xkcd.png"&gt;
+(&lt;a href="https://xkcd.com/1223/"&gt;&lt;em&gt;xkcd&lt;/em&gt;&lt;/a&gt;)&lt;/p&gt;
+&lt;p&gt;J'ai toujours aimé les jeux de gestion. J'étais bien intrigué le jour ou j'ai découvert &lt;em&gt;Dwarf Fortress&lt;/em&gt;, a priori source d'inspiration de Markus Persson lors de l'élaboration du célèbre &lt;em&gt;Minecraft&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Avec le recul, ces deux jeux ont en commun la génération procédurale de la surface jouable, et surtout, l'absence d'objectif particulier.&lt;/p&gt;
+&lt;p&gt;Pour en revenir à notre sujet principal, &lt;em&gt;Dwarf Fortress&lt;/em&gt; vous plonge dans une civilisation naine dont vous contrôlez la destinée.
+Même si je parlais d'absence d'objectif, il faut quand même satisfaire/maintenir en vie vos nains. Et pourquoi ne pas réaliser vos rêves ?
+Une forteresse hors du sol ? Industrialiser la mise à mort de vos assaillants ? Organiser des combats épiques entre des monstres légendaires et des gobelins dans une arène ?
+Faire fortune dans la vente et l'élevage d'esclaves ? Ça ne tient qu'à vous !&lt;/p&gt;
+&lt;p&gt;Une bonne partie du contenu est générée aléatoirement - Dwarf Fortress demeure une référence dans le genre procédural. Cela va du terrain aux attributs des
+différentes créatures que vous aurez la chance de rencontrer.&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;Ainsi, vos nains se spécialisent petit à petit avec l'augmentation générale de la population, et la diversification des tâches à effectuer
+pour aller plus loin dans les possibilités offertes par le jeu. Assurez-vous, au niveau &lt;em&gt;possibilités offertes par le jeu&lt;/em&gt;, (quasiment) n'importe quel autre jeu
+se retrouve relégué au rang de &lt;em&gt;Candy Crush&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Sans pour autant être un jeu "textuel", &lt;em&gt;Dwarf Fortress&lt;/em&gt; s'appuie en partie sur l'imagination du joueur dans pas mal de situations - profitant de la génération procédurale poussée à l'extrême, cela permet un très haut niveau de détail. Cela est particulièrement vrai avec les créatures de toutes sortes. On notera des détails ahurissants dans les descriptions, et qui peuvent (et vont !) impacter le gameplay.&lt;/p&gt;
+&lt;p&gt;Afin de rendre l'expérience plus simple visuellement, j'ai pris l'habitude de jouer avec le &lt;em&gt;tileset IronHand&lt;/em&gt;, afin de bénéficier de petites images à la place des caractères.&lt;/p&gt;
+&lt;h2&gt;Gameplay&lt;/h2&gt;
+&lt;p&gt;&lt;em&gt;Je fais référence au mode de jeu "Dwarf Fortress" pour tout le reste de l'article&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;On distingue deux types d'actions qui vous permettent d'agir sur votre forteresse et en influencer l'évolution:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Les désignations&lt;/li&gt;
+&lt;li&gt;Les tâches&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Les &lt;em&gt;désignations&lt;/em&gt; (&lt;code&gt;d&lt;/code&gt;) permettent de marquer une &lt;em&gt;case&lt;/em&gt; pour y effectuer une action. Par exemple, on peut délimiter
+une zone à miner via le menu &lt;em&gt;designations&lt;/em&gt; (&lt;code&gt;d-d&lt;/code&gt;). Le curseur change alors d'apparence, et on peut marquer deux coins
+d'un rectangle en validant avec la touche &lt;em&gt;entrée&lt;/em&gt; (&lt;code&gt;⌤&lt;/code&gt;).&lt;/p&gt;
+&lt;p&gt;Concrètement, vous pouvez désigner des lieux et donner des ordres pour faire accomplir des tâches plus ou moins complexes à vos nains
+(de "creuser un trou" à la mise en place de mécanismes impliquant des &lt;em&gt;barrages hydrauliques&lt;/em&gt; et des &lt;em&gt;plaques de pression&lt;/em&gt;)&lt;/p&gt;
+&lt;p&gt;Les &lt;em&gt;tâches&lt;/em&gt; sont plus générales, et peuvent être commandées dans des bâtiments dédiés ou bien ordonnées de façon automatique.&lt;/p&gt;
+&lt;p&gt;Par exemple, récolter des parcelles de culture arrivées à maturation sera ordonné automatiquement et effectué par un nain possédant la compétence adéquate. De la
+même façon, si les conditions sont réunies (canne, compétence, cours d'eau) un pêcheur ira pêcher sans qu'on lui ordonne.&lt;/p&gt;
+&lt;h1&gt;Partie type&lt;/h1&gt;
+&lt;p&gt;On commence par générer le "monde". Des longues minutes durant lesquelles un monde est généré, avec une histoire propre à ce dernier.&lt;/p&gt;
+&lt;p&gt;Il se peut par exemple que les elfes soient neutres (ils cherchent habituellement le conflit), voire éteins (!!!).
+Ces paramètres influent la diplomatie dans le monde nouvellement créée.&lt;/p&gt;
+&lt;p&gt;Après vient le moment de choisir un endroit sur la carte (de préférence un minimum accueillant), un peu d'équipement, et c'est parti.
+En général, on met le jeu en pause (&lt;em&gt;espace&lt;/em&gt;) pour avoir le temps d'inspecter les environs et d'ordonner de commencer à creuser.&lt;/p&gt;
+&lt;p&gt;Les premières parties peuvent être frustrantes, le jeu paraît compliqué au premiers abords. Puis vient une phase où vous commencez à prospérer,
+et expérimenter des nouvelles choses (l'eau coule, la noyade tue, par exemple, s'apprennent souvent au péril d'une forteresse). C'est un peu comme
+un apprentissage permanent.&lt;/p&gt;
+&lt;p&gt;Ça fait bien plusieurs années que j'y joue, et j'y découvre sans cesse de nouvelles choses (comme utiliser un vampire enchainé comme chien de garde/leurre).&lt;/p&gt;
+&lt;h2&gt;Interactions&lt;/h2&gt;
+&lt;p&gt;Énormément de facteurs sont constamment pris en compte. Les combats (comme le reste) sont aussi d'un niveau de détails très élevé.&lt;/p&gt;
+&lt;p&gt;&lt;img alt="" src="images/df/df_vam_locked.jpg"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;On ne dirait pas comme ça, mais le nain violet ci-dessus est un vampire, ancien maire, bloqué dans sa luxueuse chambre depuis plusieurs années.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Les nains :&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;ont une histoire&lt;/li&gt;
+&lt;li&gt;des liens de parenté avec d'autres nains&lt;/li&gt;
+&lt;li&gt;des liens d'amitié/haine avec d'autres nains&lt;/li&gt;
+&lt;li&gt;doivent manger et boire (de la bière de préférence !)&lt;/li&gt;
+&lt;li&gt;sont sensibles sur le plan &lt;a href="http://dwarffortresswiki.org/index.php/DF2014:Emotion"&gt;émotionnel&lt;/a&gt; (~120 émotions différentes)&lt;/li&gt;
+&lt;li&gt;ont une &lt;a href="http://dwarffortresswiki.org/index.php/DF2014:Personality_trait"&gt;personnalité&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;peuvent posséder des objets&lt;/li&gt;
+&lt;li&gt;peuvent posséder des pièces/chambres&lt;/li&gt;
+&lt;li&gt;possèdent des &lt;a href="http://dwarffortresswiki.org/index.php/DF2014:Attribute"&gt;attributs physiques&lt;/a&gt; (comme toute créature de &lt;em&gt;Dwarf Fortress&lt;/em&gt;)&lt;/li&gt;
+&lt;li&gt;des &lt;a href="http://dwarffortresswiki.org/index.php/DF2014:Attribute#Soul_Attributes"&gt;compétences intellectuelles&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;apprennent et évoluent dans leur(s) domaine(s)&lt;/li&gt;
+&lt;li&gt;...&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;J'ai tenté de décrire les nains, mais c'est à peu près aussi complet pour tout et n'importe quoi.&lt;/p&gt;
+&lt;p&gt;Le wiki parle de lui-même. &lt;a href="http://dwarffortresswiki.org/index.php/23a:Antman"&gt;Regardez la page des "antman" (hommes fourmis)&lt;/a&gt; sur le &lt;em&gt;dwarffortresswiki&lt;/em&gt;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Despite their name, all antmen are female&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;Oubliez tout ce que vous connaissez dans le jeu vidéo. On peut parler de &lt;em&gt;Dwarf Fortress&lt;/em&gt; like, mais honnêtement, je ne vois
+aucun jeu s'en rapprochant, et surtout, qui gère des interactions avec autant de détails. Quand on mélange tout ça, avec une centaine de nains, le moindre évènement inattendu peut initier une série de WTF.&lt;/p&gt;
+&lt;h2&gt;Un petit-peu de WTF&lt;/h2&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;img alt="" src="images/df/df3_angryfisher.jpg"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Ça, c'est l'histoire d'un pêcheur que j'ai enrôlé (de force) et que j'ai entrainé pendant des années.&lt;/em&gt;
+&lt;em&gt;Le jour ou je le fais sortir de sa salle d'entrainement (qu'il n'a pas quitté depuis), il se saisi de sa canne et va pêcher. La suite, c'est
+un ...lézard-garou (werelizard) qui l'attaque. Résultat: il le défonce.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;En règle générale, dans DF, il vaut mieux craindre les *-garous, (were-animals&amp;gt;), ils ont tendance à contaminer votre population,
+et ça mène assez vite à &lt;a href="http://dwarffortresswiki.org/index.php/v0.34:Losing"&gt;un peu plus de fun&lt;/a&gt;. Celui-ci n'a pas fait long feu.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;On se souviendra de ses paroles après ce massacre :&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Death is all around us. I am not upset by this&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;img alt="" src="images/df/dfsiege.png"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;L'entrée de la forteresse après un assaut de gobelins assez soutenu. On remarquera le sang, les cadavres ('g') et les nombreux items au sol,
+au niveau du rempart Est. Nos soldats se trouvent en haut (et viennent de dérouiller sévère)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Les cages visibles sont des pièges ayant fonctionnés et qui contiennent des gobelins vivants, avec lesquels on organise des
+  petites "fêtes" dans une arène dédiée (et j'entraine mes soldats avec ces cibles vivantes, c'est plus divertissant &amp;amp; prolifique)&lt;/em&gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;img alt="" src="images/df/dffight.png"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Un log de combat assez violent entre un nain (lancier - spreadwarf) et un gobelin durant le siège visible ci-dessus&lt;/em&gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;&lt;img alt="" src="images/df/df_inside.png"&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;L'intérieur de la fortresse - des salles communes, et quelques ateliers en bas à droite. La salle la plus à gauche est l'infirmerie.&lt;/em&gt;&lt;/p&gt;
+&lt;hr&gt;
+&lt;p&gt;Bref, n'hésitez pas à vous plonger dans ce vaste univers. Perso, j'utilise &lt;a href="http://dwarffortresswiki.org/index.php/Utility:Lazy_Newb_Pack"&gt;lnp&lt;/a&gt;
+pour avoir un large choix de &lt;em&gt;tilesets&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Vous trouverez le site de &lt;a href="http://www.bay12games.com/dwarves/"&gt;Bay12Games, l'éditeur de dwarf fortress ici&lt;/a&gt;.&lt;/p&gt;</content><category term="dwarf-fortress"></category><category term="games"></category></entry></feed>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <title>Python, Gevent and SQL-Server</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="./theme/css/main.css" />
+        <link href="http://blog.devsda.fr/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Full Atom Feed" />
+        <link href="http://blog.devsda.fr/feeds/{slug}.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Categories Atom Feed" />
+</head>
+<body>
+
+    <div class="navigation pure-menu pure-menu-horizontal">
+        <a href="./" class="pure-menu-heading  pure-menu-link">devsda - blog</a>
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"></li>
+
+            <li class="pure-menu-item"><a href="./category/less-tech.html" class="pure-menu-link">Less tech</a></li>
+            <li class="pure-menu-item pure-menu-selected"><a href="./category/tech.html" class="pure-menu-link">tech</a></li>
+        </ul>
+    </div>
+
+
+<div class="page-container">
+    <div class="entry-content">
+        <div class="post-meta pure-g">
+            <div class="pure-u">
+                <a href="./category/tech.html"><img src="../images/tech.jpg " class="post-avatar" alt="tech"></a>
+            </div>
+<div class="pure-u-3-4 meta-data">
+    <a href="./category/tech.html" class="category">tech</a><br />
+
+    <a class="author" href="./author/devsda.html">devsda</a>
+    &mdash; <abbr title="2017-02-24T22:20:00+01:00">ven. 24 février 2017</abbr>
+</div>        </div>
+    </div>
+
+    <div class="article-header-container">
+        <div class="background-image-container">
+
+            <div class="background-image" style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(../images/gevent-header.jpg);">
+                <img src="../images/gevent-header.jpg" alt="Python, Gevent and SQL-Server">
+                <div class="title">
+                <h1>
+                    Python, Gevent and SQL-Server
+                </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry-content">
+        <p>Months ago, we had met requirements to migrate our main HTTP-API service to Gevent.</p>
+<p>This service is a large, modular API system that can literally spawn APIs without downtime.
+We use it in many products including marketing micro-sites, client's tailored HTTP APIs,
+data collecting and behavior tracking.
+It uses <em>Flasks</em> as HTTP micro-framework, and dynamically loads applications
+(as we handle 150+ different APIs, we do not directly load all of them into memory - some of them are called
+once a month).</p>
+<p>That gives us an incredible flexibility upon material resources and a very good traffic absorption,
+at the cost of some latency, encountered when the first HTTP requests hit an unloaded API. We don't really care about this, since we need way
+more availability than low latencies. Also, this allow a decreasing latency when HTTP traffic rises, because of lazy loading. Fun to see.</p>
+<p>This whole bunch of code is proudly handled by <a href="https://uwsgi-docs.readthedocs.io/en/latest/"><em>uwsgi</em></a>. Since uwsgi spawns a lot of processes per host,
+it can handle a lot of requests before things goes wrong.</p>
+<p>But ... this design contained a severe mistake: what if something waits on I/O for a long time?</p>
+<p>Like, database becoming slow after a few millions of updated rows? A remote webservice going down?</p>
+<p>As Uwsgi spawns N processes, this number <code>N</code> is similar to <em>Super Mario</em>'s amount of "lives", but <em>Mario</em> is your whole application, and any blocking IO operation (eg: http webservice, slow database lookups) could lower your amount of available processes/threads at a given time.</p>
+<p>Depending on your OS, you could easily spot this... or not. Depending on <a href="http://linuxtechsupport.blogspot.fr/2008/10/what-exactly-is-load-average.html">how your system computes load average</a>
+(does processes waiting for IO completion counts ?). Nagios will alert you. Or not.</p>
+<hr>
+<p>Of course, we could spawn more processes. That's not very smart, and our servers were already overloaded.
+We decided to make our app <em>gevent compliant</em> (by avoiding potential races conditions), <code>import</code> gevent and <a href="http://www.gevent.org/gevent.monkey.html"><em>monkey patch</em></a> all the stuff.</p>
+<p>After resolving a few <code>(*^@#&amp;</code> pymssql/SQLServer's issues, we managed to get our app up and running on a single node of our cluster.
+And them - booom</p>
+<h3>Booom</h3>
+<p>Performances increased a lot... way more than we expected. We had eliminated one potential cause of unavailability,
+occuring when all the threads/processes are blocked, waiting for IO completion (or worst!).
+<a href="http://www.gevent.org/">Gevent</a>, allowing our processes to do "something else", while "waiting for some stuff coming from the network/disks",
+avoids blocking in such cases.</p>
+<p>Seriously, it is so fast that <strong>we could have sold a server</strong>, and responses times would have been better than <em>before the full migration</em>.</p>
+<p><img alt="load_gevent" src="images/gevent_load.jpg"></p>
+<p>The turquoise one is our <em>gevented</em> node. This is a screenshot taken after one host migration, during the beginning of the daily rush.
+You can clearly see that it is not even stressed, without any spikes
+(a spike indicates a metric computed in a thread that have blocked for several seconds).</p>
+<p>Regarding the server itself, load average drop from 100-120 to <strong>30</strong>.</p>
+<p>As all the three nodes can easily absorb that traffic, latency has not increased this morning.
+Using gevent, do not forget the database - it can struggle upon thousand of light-threads querying results. Worst if you make a bad use of
+transactions (for relational only -- NoSQL will just be inconsistent)
+Also, it could reveal race conditions within your DB logic, so be careful with that.</p>
+<h3>Database access limitation</h3>
+<p>We have limited database access to each underlying HTTP API by using an abstraction over <code>gevent.queue</code>.
+This <em>queue</em>, blocking when empty, "naturally" suspends components if all of its connections are currently used.</p>
+<p>By default, they can only fetch one database connection at one time, blocking if connection is used by another greenlet. Also, this is configurable.</p>
+<p>Gevent could help when looking for performances, especially upon a large base of diversified code, but should be used with care :)</p>
+    </div>
+
+    <footer>
+        <div class="tags">
+            <a href="./tag/python.html">python</a>
+        </div>
+        <div class="pure-g post-footer">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <div class="pure-g poster-info">
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./author/devsda.html">devsda</a></h3>
+                        <p class="author-description">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="pure-u-1 pure-u-md-1-2">
+
+                <div class="pure-g post-category-info">
+                    <div class="pure-u">
+                        <a href="./category/tech.html"><img src="../images/tech.jpg" alt=""></a>
+                    </div>
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./category/tech.html">tech</a></h3>
+                        <p class="author-description">
+                          Tech/code related stuff
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </footer>
+
+    <div class="entry-content">
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'devsda';
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+
+</div>
+
+
+
+    <footer class="index-footer">
+
+        <a href="./" title="devsda - blog">devsda - blog</a>
+        <a href="./category/less-tech.html">Less tech</a>
+        <a href="./category/tech.html">tech</a>
+        <a href="http://getpelican.com/">Pelican</a>
+        <a href="http://python.org/">Python.org</a>
+        <a href="https://www.laquadrature.net/fr">La Quadrature du Net</a>
+
+    </footer>
+
+</body>
+</html>

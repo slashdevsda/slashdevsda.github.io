@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+        <title>[fr] call/cc</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css" />
+        <link rel="stylesheet" href="./theme/css/main.css" />
+        <link href="http://blog.devsda.fr/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Full Atom Feed" />
+        <link href="http://blog.devsda.fr/feeds/{slug}.atom.xml" type="application/atom+xml" rel="alternate" title="devsda - blog Categories Atom Feed" />
+</head>
+<body>
+
+    <div class="navigation pure-menu pure-menu-horizontal">
+        <a href="./" class="pure-menu-heading  pure-menu-link">devsda - blog</a>
+        <ul class="pure-menu-list">
+            <li class="pure-menu-item"></li>
+
+            <li class="pure-menu-item"><a href="./category/less-tech.html" class="pure-menu-link">Less tech</a></li>
+            <li class="pure-menu-item pure-menu-selected"><a href="./category/tech.html" class="pure-menu-link">tech</a></li>
+        </ul>
+    </div>
+
+
+<div class="page-container">
+    <div class="entry-content">
+        <div class="post-meta pure-g">
+            <div class="pure-u">
+                <a href="./category/tech.html"><img src="../images/tech.jpg " class="post-avatar" alt="tech"></a>
+            </div>
+<div class="pure-u-3-4 meta-data">
+    <a href="./category/tech.html" class="category">tech</a><br />
+
+    <a class="author" href="./author/thomas.html">Thomas</a>
+    &mdash; <abbr title="2017-05-01T00:20:00+02:00">lun. 01 mai 2017</abbr>
+</div>        </div>
+    </div>
+
+    <div class="article-header-container">
+        <div class="background-image-container">
+
+            <div class="background-image" style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url(../images/steve_2.jpg);">
+                <img src="../images/steve_2.jpg" alt="[fr] call/cc">
+                <div class="title">
+                <h1>
+                    [fr] call/cc
+                </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="entry-content">
+        <h2>Intro</h2>
+<p>Pour commencer, petite introduction rapide à la lecture du Lisp. Ces langages possèdent une structure très simple, et composent avec cette simplicité. Dans cette intro, je vais illustrer mes exemples avec <em>Clojure</em> - je trouve la syntaxe plus élégante. Dans la seconde partie, j'illustrerai <em>call/cc</em> avec <em>Scheme</em>, cette fonctionnalité n'étant pas présente dans <em>Clojure</em>.</p>
+<p>Vous êtes prêts ?</p>
+<ul>
+<li>On commence avec les appels de fonctions (à la base des lisp) :</li>
+</ul>
+<div class="highlight"><pre><span></span>  <span class="p">(</span><span class="nv">func</span> <span class="mi">1</span> <span class="s">&quot;string&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>L'équivalent en Python :</p>
+<div class="highlight"><pre><span></span>  <span class="n">func</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<ul>
+<li>Notation <em>prefixe</em> pour les opérateurs. Vu que les opérateurs sont des fonctions qui prennent deux arguments, ça semble assez logique :</li>
+</ul>
+<div class="highlight"><pre><span></span>    <span class="nv">user=&gt;</span> <span class="p">(</span><span class="nb">+</span> <span class="mi">3</span> <span class="p">(</span><span class="nb">*</span> <span class="p">(</span><span class="nb">+</span> <span class="mi">6</span> <span class="mi">2</span><span class="p">)</span> <span class="mi">3</span><span class="p">))</span>  
+    <span class="mi">27</span>
+</pre></div>
+
+
+<p>L'équivalent en Python :</p>
+<div class="highlight"><pre><span></span>    <span class="o">&gt;&gt;&gt;</span> <span class="mi">3</span> <span class="o">+</span> <span class="p">(</span><span class="mi">6</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+    <span class="mi">27</span>
+</pre></div>
+
+
+<ul>
+<li>Ok, maintenant, chaud pour une définition de fonction ?</li>
+</ul>
+<div class="highlight"><pre><span></span>    <span class="nv">user=&gt;</span>
+    <span class="p">(</span><span class="kd">defn </span><span class="nv">func</span> 
+        <span class="s">&quot;docstring&quot;</span>
+        <span class="p">[</span><span class="nv">a</span> <span class="nv">b</span><span class="p">]</span>
+        <span class="p">(</span><span class="nb">+ </span><span class="nv">a</span> <span class="p">(</span><span class="nb">* </span><span class="nv">b</span> <span class="nv">b</span><span class="p">)))</span>
+
+    <span class="c1">;; then, call</span>
+    <span class="nv">user=&gt;</span> <span class="p">(</span><span class="nf">func</span> <span class="mi">2</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="mi">11</span>
+</pre></div>
+
+
+<p>L'équivalent en Python :</p>
+<div class="highlight"><pre><span></span>    <span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="o">...</span>     <span class="s2">&quot;docstring&quot;</span>
+    <span class="o">...</span>     <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">b</span><span class="p">)</span>
+
+    <span class="c1"># then, call</span>
+    <span class="o">&gt;&gt;&gt;</span> <span class="n">func</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="mi">11</span>
+</pre></div>
+
+
+<p>Les lisps sont composés de <code>s-expressions</code>. <code>(+ 1 10)</code> en est une, tout comme nos définitions de fonctions plus haut.
+Pour retourner une valeur, il faut quelle soit évaluée en dernier dans une fonction.</p>
+<p>Ok, normalement vous avez également saisi comment on commente (avec '<code>;</code>').
+Maintenant que vous vous êtes echauffés, regardons du code en <em>Clojure</em>, 
+vs le même mais dans un <em>Scheme</em> plus "traditionnel"</p>
+<p><em>Clojure</em></p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">def </span><span class="nv">pi</span> <span class="mf">3.14</span><span class="p">)</span>
+
+<span class="p">(</span><span class="kd">defn </span><span class="nv">add-one</span>
+    <span class="p">[</span><span class="nv">x</span><span class="p">]</span>
+    <span class="p">(</span><span class="k">let </span><span class="p">[</span><span class="nv">one</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="p">(</span><span class="nb">+ </span><span class="mi">1</span> <span class="nv">one</span><span class="p">)))</span>
+</pre></div>
+
+
+<p><em><a href="https://clojuredocs.org/clojure.core/let">exemple</a> de documentation sur <code>let</code>, avec Clojure</em></p>
+<p><em>Scheme</em></p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="nv">pi</span> <span class="mf">3.14</span><span class="p">)</span>
+
+
+<span class="c1">;; Scheme utilise aussi bien &#39;define&#39; pour les </span>
+<span class="c1">;; variables que pour les fonctions. Seul les arguments</span>
+<span class="c1">;; changent.</span>
+<span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">add-one</span> <span class="nv">x</span><span class="p">)</span>
+    <span class="p">(</span><span class="k">let </span><span class="p">([</span><span class="nv">one</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="p">(</span><span class="nb">+ </span><span class="mi">1</span> <span class="nv">one</span><span class="p">)))</span>
+</pre></div>
+
+
+<p><em><a href="https://docs.racket-lang.org/reference/let.html">exemple</a> de documentation sur <code>let</code>, avec Racket</em></p>
+<p><em>N'hésitez pas à vous intéresser davantage aux Lisps si vous pataugez avant d'attaquer la suite de cet article. 
+call/cc est assez mindfuck au début, malgré l'étonnante simplicité des principes régissant ces langages.</em></p>
+<p>Pour aller un peu plus loin sur la partie <em>Lisp</em>, je vous conseille <a href="http://www.braveclojure.com/">BraveClojure</a>. Pour Scheme (et donc <code>call/cc</code> et dérivés), il existe pas mal d'implémentations.
+<a href="https://docs.racket-lang.org/quick/index.html">Racket</a> est assez moderne et possède une bonne communauté (la légende veut qu'HN/ycombinator soit développé avec). Vous pourrez vous fumer le cerveau avec les continuations.</p>
+<hr>
+<h2>call-with-current-continuation</h2>
+<p><em>On y est</em></p>
+<p>Alors, si on veut "appeler avec la continuation actuelle (littéralement traduit)", il va falloir définir ce qu'est une continuation.</p>
+<p>La continuation, c'est la représentation de l'état d'un programme. On peut voir ça comme le code qu'il reste à exécuter pour
+continuer. Dans ses spécifications, <em>Scheme</em> décrit les continuations comme des objets/citoyens de première classe (on peut assigner des continuation
+à des variables, les stocker dans des listes, ...).</p>
+<p>Concrètement, la continuation se matérialise sous la forme une fonction. Si on l'appelle, on "bifurque" dans la logique 
+d'execution d'un programme. (On peut aussi dire "dérouter"). Pensez <code>setjmp</code> et <code>longjmp</code> en C, si ça vous parle.</p>
+<p>Par exemple, dans l'expression suivante : </p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="nb">display </span><span class="p">(</span><span class="nb">+ </span><span class="p">(</span><span class="nf">func</span> <span class="mi">10</span><span class="p">)</span> <span class="mi">10</span><span class="p">))</span>
+</pre></div>
+
+
+<p>la continuation de l'appel à func (dans <code>(func 10)</code>) constitue une addition de la valeur retournée avec 10, puis le résultat est
+passé à la fonction <code>display</code>.
+Le point de vue n'est plus le même que lors de la lecture du code. Quand on appelle une <em>continuation</em>, le flot d'exécution arrive 
+brutalement. On peut voir la continuation comme ceci:</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">lambda </span><span class="p">(</span><span class="nf">x</span><span class="p">)</span> <span class="p">(</span><span class="nb">display </span><span class="p">(</span><span class="nb">+ </span><span class="nv">x</span> <span class="mi">10</span><span class="p">)))</span>
+</pre></div>
+
+
+<p>Mais comment obtenir une continuation pour pouvoir s'amuser avec ?</p>
+<p>Revenons à <em>call/cc</em> ! <code>call-with-current-continuation</code> permet d'appeler une fonction en lui passant la continuation actuelle en paramètre.
+Si la fonction appelée appelle la <em>continuation</em>, call-with-current-continuation retourne l'argument (peu importe) passé à la continuation.</p>
+<div class="highlight"><pre><span></span><span class="n">Mais</span><span class="p">...</span>
+</pre></div>
+
+
+<p>On peut aussi stocker la continuation (dénommée <code>cont</code> dans le code ci-dessous) quelque part ... et y revenir plus tard.</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="nv">v</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">func</span> <span class="nv">cont</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if </span><span class="p">(</span><span class="nb">= </span><span class="nv">v</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">(</span><span class="nf">cont</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="nv">v</span><span class="p">))</span>
+
+
+<span class="c1">;; display permet d&#39;afficher du texte sur </span>
+<span class="c1">;; la sortie standard</span>
+<span class="p">(</span><span class="nb">display </span><span class="p">(</span><span class="nb">call-with-current-continuation </span><span class="nv">func</span><span class="p">))</span>
+</pre></div>
+
+
+<p>J'ai dis plus haut que "la valeur retournée par une fonction en lisp est la valeur de la dernière expression évalué". Et bien, pas forcément. Avec
+<code>call/cc</code>, on peut implémenter <code>return</code>, se comportant comme dans un langage impératif - en stopant l'exécution d'une fonction :</p>
+<div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">call-with-return</span> <span class="nv">f</span> <span class="o">.</span> <span class="nv">args</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">call-with-current-continuation</span>
+   <span class="c1">;; on utilise &#39;apply&#39; pour appeler notre fonction (f)</span>
+   <span class="c1">;; avec la continuation + ses arguments originels grace</span>
+   <span class="c1">;; à l&#39;expression (cons cont args).</span>
+   <span class="c1">;;</span>
+   <span class="c1">;; Cette fonction lambda est une &#39;closure&#39;: elle </span>
+   <span class="c1">;; capture les variables `f` et `args`</span>
+   <span class="c1">;; pour les réutiliser lorsqu&#39;elle sera </span>
+   <span class="c1">;; appelée par call/cc.</span>
+   <span class="p">(</span><span class="k">lambda </span><span class="p">(</span><span class="nf">cont</span><span class="p">)</span> <span class="p">(</span><span class="nb">apply </span><span class="nv">f</span> <span class="p">(</span><span class="nb">cons </span><span class="nv">cont</span> <span class="nv">args</span><span class="p">)))))</span>
+
+
+<span class="c1">;; On récupère &#39;return&#39; sous forme de paramètre</span>
+<span class="p">(</span><span class="k">define </span><span class="p">(</span><span class="nf">add-or-leave</span> <span class="nv">return</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">begin</span>
+    <span class="p">(</span><span class="k">if </span><span class="p">(</span><span class="nb">= </span><span class="nv">a</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="p">(</span><span class="nf">return</span> <span class="mi">-1</span><span class="p">))</span>
+    <span class="p">(</span><span class="nb">+ </span><span class="nv">a</span> <span class="nv">b</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="nb">display </span><span class="p">(</span><span class="nf">call-with-return</span> <span class="nv">add-or-leave</span> <span class="mi">1</span> <span class="mi">9</span><span class="p">))</span>
+<span class="c1">;; -&gt; 10</span>
+<span class="p">(</span><span class="nb">display </span><span class="p">(</span><span class="nf">call-with-return</span> <span class="nv">add-or-leave</span> <span class="mi">0</span> <span class="mi">9</span><span class="p">))</span>
+<span class="c1">;; -&gt; -1</span>
+<span class="p">(</span><span class="nb">display </span><span class="p">(</span><span class="nf">call-with-return</span> <span class="nv">add-or-leave</span> <span class="mi">10</span> <span class="mi">10</span><span class="p">))</span>
+<span class="c1">;; -&gt; 20</span>
+</pre></div>
+
+
+<p>La différence est quand même "assez" majeure avec <em>l'instruction</em> <strong>return</strong>.
+Ce <code>return</code> ci est une fonction, qu'on peut donc être passée en paramètre à d'autres fonctions.</p>
+<p><img alt="" src="images/mb.jpg"></p>
+<p>Concrètement, c'est assez utile dans un algorithme de backtracking ou des 
+changement de branches radicaux peuvent être prévus. Par-dessus ces concepts (<code>call/cc</code> n'est pas tout seul !), on peut implémenter un tas de mécanismes, 
+du système d'exception au coroutines.</p>
+<p>Pour rapprocher cela à Python, on pourrait se dire que <code>yield</code> pourrait être une application des continuations : cette instruction permet de relâcher le <a href="https://en.wikipedia.org/wiki/Control_flow">flux de controle</a> et permet l'implémentation des générateurs en Python. </p>
+<p>En <em>Scheme</em>, <code>yield</code> serait une macro qui capture la continuation courante, et appelle la continuation parente avec la continuation courante en argument. Ainsi, 
+l'appelant, ou qu'il soit, pourrait "réveiller" la fonction quand bon lui semble, en appelant la continuation obtenue en retour de la fonction. Pffiou.</p>
+<p>En regardant du code, l'image m'est venu de certaines succession de callback en <em>Javascript</em> ou 
+même des <em>promises</em> : on s'en rapproche - mais les continuations ne sont pas matérialisées.</p>
+<p>Je termine avec quelques exemples de concepts que l'on peut implémenter en utilisant les continuations :</p>
+<ul>
+<li>
+<p>l'instruction SWITCH</p>
+</li>
+<li>
+<p>GOTO</p>
+</li>
+<li>
+<p>Des <a href="https://en.wikipedia.org/wiki/Generator_%28computer_programming%29">Générateurs</a></p>
+</li>
+<li>
+<p>Des <a href="https://en.wikipedia.org/wiki/Green_threads"><em>Green Threads</em></a></p>
+</li>
+</ul>
+<p>N'hésitez pas à creuser si le sujet vous intéresse.</p>
+    </div>
+
+    <footer>
+        <div class="tags">
+            <a href="./tag/scheme.html">scheme</a>
+            <a href="./tag/lisp.html">lisp</a>
+        </div>
+        <div class="pure-g post-footer">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <div class="pure-g poster-info">
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./author/thomas.html">Thomas</a></h3>
+                        <p class="author-description">
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="pure-u-1 pure-u-md-1-2">
+
+                <div class="pure-g post-category-info">
+                    <div class="pure-u">
+                        <a href="./category/tech.html"><img src="../images/tech.jpg" alt=""></a>
+                    </div>
+                    <div class="pure-u-3-4">
+                        <h3 class="author-name"><a href="./category/tech.html">tech</a></h3>
+                        <p class="author-description">
+                          Tech/code related stuff
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </footer>
+
+    <div class="entry-content">
+        <div id="disqus_thread"></div>
+        <script type="text/javascript">
+            var disqus_shortname = 'devsda';
+            (function() {
+                var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+                (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+    </div>
+
+</div>
+
+
+
+    <footer class="index-footer">
+
+        <a href="./" title="devsda - blog">devsda - blog</a>
+        <a href="./category/less-tech.html">Less tech</a>
+        <a href="./category/tech.html">tech</a>
+        <a href="http://getpelican.com/">Pelican</a>
+        <a href="http://python.org/">Python.org</a>
+        <a href="https://www.laquadrature.net/fr">La Quadrature du Net</a>
+
+    </footer>
+
+</body>
+</html>
