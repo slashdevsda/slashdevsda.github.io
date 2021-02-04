@@ -44,7 +44,7 @@ file:images/peopledoc.png
 I decicate roughly 50% of my time working around infrastructure topics (contributing to our ansible codebase, incident diagnosis and a few operationnal tasks), 
 spending time with SRE teams to architecture, reproduce bugs and so on.
 \\
-Challenges are quite interestings: we have to ensure and maintain service availability while delivering (sometimes not so stable) features - each compromise has to be evaluated, a mistake or some misunderstood quickly happen within a large Python codebase and environment.
+Challenges are quite interesting: we have to ensure and maintain service availability while delivering (sometimes not so stable) features - each compromise has to be evaluated, a mistake or some misunderstood quickly happen within a large Python codebase and environment.
 Partially due to usage, we've hit various Django's limit, especially around Django's /Object Relational Mapper/. Working with /skilled Database Administrators/ surely helps a lot.
 \\
 \\
