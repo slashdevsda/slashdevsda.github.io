@@ -1,4 +1,4 @@
-#+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/org/theme-readtheorg.setup
+#+SETUPFILE: http://raw.githubusercontent.com/fniessen/org-html-themes/master/org/theme-readtheorg.setup
 #+TITLE: Thomas Ecuer, Software Engineer
 #+OPTIONS: H:2
 
@@ -8,16 +8,69 @@
 
 ------
 
-Hi! I'm Thomas, a french software engineer. I currently live in Paris.
+Hi! I'm Thomas, a french software engineer. I currently live in France.
 
-I like to solve problems involving computers and software, especially those running under Linux.
+I like to solve problems involving computers and software, especially those running under Linux
 
 
 -----------
 
 ** Work Experiences
 #+OPTIONS: num:nil
-*** Tradelab (Nov 2018)
+
+*** Peopledoc / UKG (Jan 2020)
+
+
+
+
+#+ATTR_HTML: :style float:right
+file:images/peopledoc.png
+
+/PeopleDoc/ is a company building HRSD software (Human Resource Service Delivery)
+\\
+\\
+\\
+\\
+
+
+
+- My first full-remote position
+- Working on a keystone component of Peopledoc, a somewhat large and complex Python/Django codebase
+- Various specialized datastores (PostgreSQL, ElasticSearch, Redis)
+- Many components and asynchronous workflows
+- Secure and wide environment
+
+
+I decicate roughly 50% of my time working around infrastructure topics (contributing to our ansible codebase, incident diagnosis and a few operationnal tasks), 
+spending time with SRE teams to architecture, reproduce bugs and so on.
+\\
+Challenges are quite interestings: we have to ensure and maintain service availability while delivering (sometimes not so stable) features - each compromise has to be evaluated, a mistake or some misunderstood quickly happen within a large Python codebase and environment.
+Partially due to usage, we've hit various Django's limit, especially around Django's /Object Relational Mapper/. Working with /skilled Database Administrators/ surely helps a lot.
+\\
+\\
+Common subjects:
+- Feature conception and development (Python 3.6/3.7/3.8 / Django / Jinja)
+  in a constrained environment (monthly releases, security, SLA)
+
+- Infrastructure / deployments and automation (Ansible)
+- Incident recovery as well as diagnosis & postmortems
+- Security compliance and high-availability topics
+
+#+ATTR_HTML: :style float:center
+file:images/ukg.jpg
+
+/PeopleDoc/ is now part of UKG (Ultimate Kronos Group)
+
+
+\\
+\\
+\\
+\\
+\\
+
+
+
+*** Tradelab (Nov 2018 - Dec 2019)
 
 #+ATTR_HTML: :style float:right
 file:images/tradelab.png
@@ -28,6 +81,17 @@ file:images/tradelab.png
 - Working on /PaaS/ features, software architecture and Linux related issues
 - /Docker/, /Jenkins/, /Google Cloud Platform/
 - Infrastructure/security oriented missions, in conjuction with various contractors (system administration and network administration)
+
+---
+
+Hired as a devops, my primary task was to develop, maintain and enhance jenkins' continuous integration pipelines.
+The ecosystem was mainly PHP, I helped on migrating various components from PHP5 to PHP7 without any prior knowledge about PHP and from a devops perspective - this was fun.
+
+
+It took a few months then I started working on infrastructure and security topic.
+These were essentially about initiating inventories, as well as redesign / migrate services to increase security and best practices.
+
+The infrastructure was both /bare-metal/ and /Cloud/ (Google Cloud Platform), we used to configure the bare metal one with Ansible and used containers-on-VM a lot on Google Cloud Platform's side.
 
 
 -----------
@@ -96,7 +160,7 @@ The same applies to shell scripting on Linux, but I'm not enjoying that as much 
 I also use /Ansible/, have a daily use of /Git/ and Linux.
 I find my accidental and limited knowledge of Linux very useful in a professional context involving Linux boxes. 
 
-On a more personal touch, I enjoy programming in `Rust` in my spare time, and stupid and/or useless projects. See my github for [[https://github.com/slashdevsda/fb/blob/master/main.asm#L104][/non pertinent stuff/]] :')
+On a more personal touch, I enjoy programming in `Rust` in my spare time, and stupid and/or useless projects. See my github for [[https://github.com/slashdevsda/fb][/non pertinent stuff/]] :')
 
 I'm interested by distributed systems, applications and workloads - like discovering and understanding how a database fits into the CAP theorem, for instance.
 
@@ -105,7 +169,7 @@ This leads me to learn /Elixir/ (and a little bit of /Erlang/ too) with /OTP/ on
 
 
 
-I also like bonsaïs, internet culture, video-games and hacking.
+I also like bonsaïs, hydroponics, electronic, internet culture, video-games and hacking.
 
 
 ---
