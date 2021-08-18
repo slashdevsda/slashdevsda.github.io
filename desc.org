@@ -1,4 +1,4 @@
-#+SETUPFILE: http://raw.githubusercontent.com/fniessen/org-html-themes/master/org/theme-readtheorg.setup
+#+SETUPFILE: theme-readtheorg.setup
 #+TITLE: Thomas Ecuer, Software Engineer
 #+OPTIONS: H:2
 
@@ -42,7 +42,7 @@ file:images/peopledoc.png
 
 
 I dedicate roughly 50% of my time working around infrastructure topics (contributing to our ansible codebase, incident diagnosis and a few operational tasks), 
-spending time with SRE teams to architecture, reproduce bugs and so on.
+spending time with SRE and devops teams to architecture, reproduce bugs and so on.
 \\
 The challenges are quite interesting: we have to ensure and maintain service availability while delivering (sometimes not so stable) features - each compromise has to be evaluated, a mistake or some misunderstood quickly happen within a large Python codebase and environment.
 Partially due to usage, we've hit various Django's limit, especially around Django's /Object Relational Mapper/. Working with /skilled Database Administrators/ surely helps a lot.
@@ -54,7 +54,7 @@ Common subjects:
 
 - Infrastructure / deployments and automation (Ansible)
 - Incident recovery as well as diagnosis & postmortems
-- Security compliance and high-availability topics
+- Security compliance, response and high-availability topics
 
 #+ATTR_HTML: :style float:center
 file:images/ukg.jpg
@@ -169,13 +169,13 @@ This leads me to learn /Elixir/ (and a little bit of /Erlang/ too) with /OTP/ on
 
 
 
-I also like bonsaïs, hydroponics, electronic, internet culture, video-games and hacking.
+I also like bonsaïs, hydroponics, electronic, Computer-aided design (CAD), 3d printing, internet culture, video-games, computer graphics and hacking around.
 
 
 ---
 
 
-- [[http://blog.devsda.fr/][Blog (mostly technical)]]
+- [[http://blog.devsda.fr/][Blog (mostly technical, not quite up to date]]
 - [[https://github.com/slashdevsda][Github]]
 
 
