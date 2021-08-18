@@ -174,8 +174,15 @@ I also like bonsaïs, hydroponics, electronic, Computer-aided design (CAD), 3d p
 
 ---
 
-
 - [[http://blog.devsda.fr/][Blog (mostly technical, not quite up to date)]]
 - [[https://github.com/slashdevsda][Github]]
+
+
+** Contact 
+
+- Email: ecuer.thomas@gmail.com
+- Phone/Signal/Whatsapp: +33 6 25 18 31 17
+- [[https://www.linkedin.com/in/thomas-ecuer-2089748a/][LinkedIn]]
+
 
 
