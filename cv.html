@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2021-08-18 Wed 14:18 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Thomas Ecuer, Software Engineer</title>
+<meta name="generator" content="Org mode" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { width: 90%; }
+  /*]]>*/-->
+</style>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/htmlize.css"/>
+<link rel="stylesheet" type="text/css" href="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/css/readtheorg.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/lib/js/jquery.stickytableheaders.min.js"></script>
+<script type="text/javascript" src="https://fniessen.github.io/org-html-themes/src/readtheorg_theme/js/readtheorg.js"></script>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Thomas Ecuer, Software Engineer</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#orge646bf8">Welcome</a></li>
+</ul>
+</li>
+<li><a href="#orgb30a3dc">Work Experiences</a>
+<ul>
+<li><a href="#org84e438c">Peopledoc / UKG (Jan 2020)</a></li>
+<li><a href="#org68390ca">Tradelab (Nov 2018 - Dec 2019)</a></li>
+<li><a href="#org158b6d9">1000Mercis/Numberly Group (Jan 2016 - Oct 2018)</a></li>
+<li><a href="#org4a051a1">OVH (May-Oct 2015)</a></li>
+</ul>
+</li>
+<li><a href="#orgc9476e1">Interests</a></div>
+</div>
+
+
+
+<div id="outline-container-orge646bf8" class="outline-3">
+<h3 id="orge646bf8">Welcome</h3>
+<div class="outline-text-3" id="text-orge646bf8">
+<hr />
+
+<p>
+Hi! I'm Thomas, a french software engineer. I currently live in France.
+</p>
+
+<p>
+I like to solve problems involving computers and software, especially those running under Linux
+</p>
+
+
+<hr />
+</div>
+</div>
+
+<div id="outline-container-orgb30a3dc" class="outline-2">
+<h2 id="orgb30a3dc">Work Experiences</h2>
+<div class="outline-text-2" id="text-orgb30a3dc">
+</div>
+
+<div id="outline-container-org84e438c" class="outline-3">
+<h3 id="org84e438c">Peopledoc / UKG (Jan 2020)</h3>
+<div class="outline-text-3" id="text-org84e438c">
+
+<div class="figure">
+<p><img src="images/peopledoc.png" alt="peopledoc.png" style="float:right" />
+</p>
+</div>
+
+<p>
+<i>PeopleDoc</i> is a company building HRSD software (Human Resource Service Delivery)
+<br />
+<br />
+<br />
+<br />
+</p>
+
+
+
+<ul class="org-ul">
+<li>My first full-remote position</li>
+<li>Working on a keystone component of Peopledoc, a somewhat large and complex Python/Django codebase</li>
+<li>Various specialized datastores (PostgreSQL, ElasticSearch, Redis)</li>
+<li>Many components and asynchronous workflows</li>
+<li>Secure and wide environment</li>
+</ul>
+
+
+<p>
+I dedicate roughly 50% of my time working around infrastructure topics (contributing to our ansible codebase, incident diagnosis and a few operational tasks), 
+spending time with SRE and devops teams to architecture, reproduce bugs and so on.
+<br />
+The challenges are quite interesting: we have to ensure and maintain service availability while delivering (sometimes not so stable) features - each compromise has to be evaluated, a mistake or some misunderstood quickly happen within a large Python codebase and environment.
+Partially due to usage, we've hit various Django's limit, especially around Django's <i>Object Relational Mapper</i>. Working with <i>skilled Database Administrators</i> surely helps a lot.
+<br />
+<br />
+Common subjects:
+</p>
+<ul class="org-ul">
+<li>Feature conception and development (Python 3.6/3.7/3.8 / Django / Jinja)
+in a constrained environment (monthly releases, security, SLA)</li>
+
+<li>Infrastructure / deployments and automation (Ansible)</li>
+<li>Incident recovery as well as diagnosis &amp; postmortems</li>
+<li>Security compliance, response and high-availability topics</li>
+</ul>
+
+
+<div class="figure">
+<p><img src="images/ukg.jpg" alt="ukg.jpg" style="float:center" />
+</p>
+</div>
+
+<p>
+<i>PeopleDoc</i> is now part of UKG (Ultimate Kronos Group)
+</p>
+
+
+<p>
+<br />
+<br />
+<br />
+<br />
+<br />
+</p>
+</div>
+</div>
+
+
+
+<div id="outline-container-org68390ca" class="outline-3">
+<h3 id="org68390ca">Tradelab (Nov 2018 - Dec 2019)</h3>
+<div class="outline-text-3" id="text-org68390ca">
+
+<div class="figure">
+<p><img src="images/tradelab.png" alt="tradelab.png" style="float:right" />
+</p>
+</div>
+
+<p>
+<i>Tradelab</i> is a programmatic marketing platform, mainly operating in the <a href="https://en.wikipedia.org/wiki/Real-time_bidding">Real Time Biding</a> field.
+</p>
+
+<ul class="org-ul">
+<li>Hired as a DevOps @Infrastructure &amp; Cloud Services</li>
+<li>Working on <i>PaaS</i> features, software architecture and Linux related issues</li>
+<li><i>Docker</i>, <i>Jenkins</i>, <i>Google Cloud Platform</i></li>
+<li>Infrastructure/security oriented missions, in conjuction with various contractors (system administration and network administration)</li>
+</ul>
+
+<p>
+&#x2014;
+</p>
+
+<p>
+Hired as a devops, my primary task was to develop, maintain and enhance jenkins' continuous integration pipelines.
+The ecosystem was mainly PHP, I helped on migrating various components from PHP5 to PHP7 without any prior knowledge about PHP and from a devops perspective - this was fun.
+</p>
+
+
+<p>
+It took a few months then I started working on infrastructure and security topic.
+These were essentially about initiating inventories, as well as redesign / migrate services to increase security and best practices.
+</p>
+
+<p>
+The infrastructure was both <i>bare-metal</i> and <i>Cloud</i> (Google Cloud Platform), we used to configure the bare metal one with Ansible and used containers-on-VM a lot on Google Cloud Platform's side.
+</p>
+
+
+<hr />
+</div>
+</div>
+
+
+
+
+<div id="outline-container-org158b6d9" class="outline-3">
+<h3 id="org158b6d9">1000Mercis/Numberly Group (Jan 2016 - Oct 2018)</h3>
+<div class="outline-text-3" id="text-org158b6d9">
+
+<div class="figure">
+<p><img src="images/1000mercis.jpg" alt="1000mercis.jpg" style="float:right" />
+</p>
+</div>
+
+<ul class="org-ul">
+<li>Python developer</li>
+<li>Joined a small team (2-5)</li>
+<li>Python and security best practices</li>
+<li>SQL (SQL-Server), mongoDB</li>
+</ul>
+
+<p>
+<i>Numberly</i> (1000Mercis group) is a marketing agency focused on data collection, <i>Customer Relationship Management</i>, <i>Real Time Biding</i> and some others ways to increase digital impact.
+</p>
+
+<p>
+This experience was very interesting on various aspects. 
+At Numberly, I've discovered how it feels to work with various (<i>non tech</i>) profiles, and surprisingly, I've enjoyed it a lot.
+</p>
+
+<p>
+&#x2014;
+</p>
+
+<p>
+Initially hired as a Python Developer, I've mostly worked on a Python HTTP API designed to gather personal data, used in many contexts (Websites, online mini-games, applications&#x2026;)
+</p>
+
+<p>
+I've worked on several topics within this perimeter.
+So far, my favourite one was about optimizing legacy Python code heavily used in production. 
+After a few but anxiety-prone bugs, we managed to divide the load of a whole cluster by 3, and we were pretty happy about it.
+</p>
+
+<p>
+Then, I've increased my perimeter and also had opportunities to help with production system's reliability and information/infrastructure security.
+</p>
+
+
+<hr />
+</div>
+</div>
+
+<div id="outline-container-org4a051a1" class="outline-3">
+<h3 id="org4a051a1">OVH (May-Oct 2015)</h3>
+<div class="outline-text-3" id="text-org4a051a1">
+
+<div class="figure">
+<p><img src="images/ovh.png" alt="ovh.png" style="float:right" />
+</p>
+</div>
+
+<p>
+<i>OVH is a French hosting company</i>
+</p>
+
+<ul class="org-ul">
+<li>It was my last internship</li>
+<li>Perl/Python oriented</li>
+<li>I also used AngularJS</li>
+<li>Linux environments</li>
+</ul>
+
+
+<p>
+At OVH, I've learned what a "pretty big" infrastructure is, and what it involves to keep it up and running.
+Also, handling a lot of services, including legacy ones, at scale is hard - software lifecycle is a real challenge, as well as development itself.
+</p>
+
+<p>
+The people there were the most brilliant I've ever met so far, and I've never learned as much in a short window of time.
+</p>
+
+<hr />
+</div>
+</div>
+</div>
+
+
+
+<div id="outline-container-orgc9476e1" class="outline-2">
+<h2 id="orgc9476e1">Interests</h2>
+<div class="outline-text-2" id="text-orgc9476e1">
+<p>
+I enjoy programming a lot. 
+I have professional experiences with Python (2.7+) and still prefer Python for various personal projects.
+The same applies to shell scripting on Linux, but I'm not enjoying that as much as Python :)
+</p>
+
+
+<p>
+I also use <i>Ansible</i>, have a daily use of <i>Git</i> and Linux.
+I find my accidental and limited knowledge of Linux very useful in a professional context involving Linux boxes. 
+</p>
+
+<p>
+On a more personal touch, I enjoy programming in `Rust` in my spare time, and stupid and/or useless projects. See my github for <a href="https://github.com/slashdevsda/fb"><i>non pertinent stuff</i></a> :')
+</p>
+
+<p>
+I'm interested by distributed systems, applications and workloads - like discovering and understanding how a database fits into the CAP theorem, for instance.
+</p>
+
+<p>
+This leads me to learn <i>Elixir</i> (and a little bit of <i>Erlang</i> too) with <i>OTP</i> on my spare time - I found these concepts and mechanics very interesting, as well as the functional paradigm.
+</p>
+
+
+
+
+<p>
+I also like bonsaïs, hydroponics, electronic, Computer-aided design (CAD), 3d printing, internet culture, video-games, computer graphics and hacking around.
+</p>
+
+
+<p>
+&#x2014;
+</p>
+
+
+<ul class="org-ul">
+<li><a href="http://blog.devsda.fr/">Blog (mostly technical, not quite up to date)</a></li>
+<li><a href="https://github.com/slashdevsda">Github</a></li>
+</ul>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Created: 2021-08-18 Wed 14:18</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
