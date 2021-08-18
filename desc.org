@@ -175,7 +175,7 @@ I also like bonsaïs, hydroponics, electronic, Computer-aided design (CAD), 3d p
 ---
 
 
-- [[http://blog.devsda.fr/][Blog (mostly technical, not quite up to date]]
+- [[http://blog.devsda.fr/][Blog (mostly technical, not quite up to date)]]
 - [[https://github.com/slashdevsda][Github]]
 
 
