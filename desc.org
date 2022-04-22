@@ -18,7 +18,36 @@ I like to solve problems involving computers and software, especially those runn
 ** Work Experiences
 #+OPTIONS: num:nil
 
-*** Peopledoc / UKG (Jan 2020)
+*** UKG - Product Security Engineer (Jan 2022)
+
+#+ATTR_HTML: :style float:left
+file:images/ukg.jpg
+
+/PeopleDoc/ is now part of UKG (Ultimate Kronos Group)
+
+
+\\
+\\
+\\
+\\
+\\
+
+
+Thanks to internal mobility, I'm now a security engineer. Most of the time, I'm working with product teams to help them following our security guidelines.
+This implies some code reviews, Q&A sessions with developpers and managers and discussions about architecture.
+
+I'm still writting code and enjoying it, as I'm still working on various automation tasks, relating to security processes their automation.
+
+Topics:
+
+- Code/project reviews (mostly Python and Java)
+- Architecture review (routing, k8s ingresses, infrastructure as code)
+- Assist product teams to design and implement security requirements
+- Security processes and scanning automation
+- Enhancing our current processes (review methodology and doctrines)
+
+
+*** Peopledoc / UKG - Software engineer (Jan 2020 - Dec 2022)
 
 
 
@@ -33,6 +62,7 @@ file:images/peopledoc.png
 \\
 
 
+\\
 
 - My first full-remote position
 - Working on a keystone component of Peopledoc, a somewhat large and complex Python/Django codebase
@@ -56,17 +86,6 @@ Common subjects:
 - Incident recovery as well as diagnosis & postmortems
 - Security compliance, response and high-availability topics
 
-#+ATTR_HTML: :style float:center
-file:images/ukg.jpg
-
-/PeopleDoc/ is now part of UKG (Ultimate Kronos Group)
-
-
-\\
-\\
-\\
-\\
-\\
 
 
 
